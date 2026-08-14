@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>ÖPNV</title>
+  <title>ÖPNV Live</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     :root {
-      --bg: #0a0b11;
-      --panel: #11141c;
-      --card: #181c27;
-      --border: #2a3142;
+      --bg: #0b0d12;
+      --panel: #13161e;
+      --card: #1a1e28;
+      --border: #2c3344;
       --text: #f1f3f8;
       --muted: #8b93a7;
-      --accent: #5b8def;
+      --accent: #8ab4f8;
       --u: #0065b0;
       --s: #008c4f;
       --tram: #e30613;
@@ -25,7 +25,7 @@
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      font-family: "Google Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
       background: var(--bg);
       color: var(--text);
       height: 100dvh;
@@ -34,7 +34,7 @@
 
     #app {
       display: grid;
-      grid-template-columns: 410px 1fr;
+      grid-template-columns: 400px 1fr;
       height: 100dvh;
     }
 
@@ -45,148 +45,172 @@
       }
     }
 
+    /* PANEL */
     .panel {
       background: var(--panel);
       display: flex;
       flex-direction: column;
       border-right: 1px solid var(--border);
-      z-index: 20;
+      z-index: 30;
       max-height: 100dvh;
     }
 
     @media (max-width: 900px) {
       .panel {
         border-right: none;
-        border-radius: 20px 20px 0 0;
-        max-height: 48dvh;
-        box-shadow: 0 -12px 40px rgba(0,0,0,.5);
+        border-radius: 24px 24px 0 0;
+        max-height: 46dvh;
+        box-shadow: 0 -8px 40px rgba(0,0,0,.55);
         order: 2;
       }
     }
 
-    .top {
-      padding: 16px 16px 12px;
+    .panel-top {
+      padding: 14px 16px 12px;
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
     }
 
     @media (max-width: 900px) {
       .handle {
-        width: 36px;
+        width: 40px;
         height: 4px;
-        background: #3a4356;
+        background: #3c4558;
         border-radius: 2px;
         margin: 0 auto 12px;
       }
     }
 
-    .title {
-      font-size: 17px;
-      font-weight: 700;
-      letter-spacing: -0.3px;
-    }
-
-    .sub {
-      font-size: 13px;
-      color: var(--muted);
-      margin-top: 3px;
-    }
-
-    .search-box {
-      margin-top: 12px;
+    .search-wrap {
       position: relative;
     }
 
-    .search-box input {
+    .search-wrap input {
       width: 100%;
-      height: 44px;
-      padding: 0 12px 0 40px;
+      height: 48px;
+      padding: 0 48px 0 44px;
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 28px;
       color: var(--text);
       font-size: 15px;
       outline: none;
+      box-shadow: 0 2px 12px rgba(0,0,0,.25);
     }
 
-    .search-box input:focus { border-color: var(--accent); }
+    .search-wrap input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 2px 16px rgba(138,180,248,.15);
+    }
 
-    .search-box svg {
+    .search-wrap .icon-search {
       position: absolute;
-      left: 12px;
+      left: 16px;
       top: 50%;
       transform: translateY(-50%);
-      width: 16px;
-      height: 16px;
-      opacity: .5;
+      width: 18px;
+      height: 18px;
+      opacity: .6;
       pointer-events: none;
+    }
+
+    .search-wrap .icon-loc {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      color: var(--accent);
+      cursor: pointer;
     }
 
     .results {
       position: absolute;
-      top: calc(100% + 6px);
+      top: calc(100% + 8px);
       left: 0;
       right: 0;
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 16px;
       max-height: 280px;
       overflow-y: auto;
       display: none;
-      z-index: 40;
-      box-shadow: 0 12px 32px rgba(0,0,0,.4);
+      z-index: 50;
+      box-shadow: 0 12px 40px rgba(0,0,0,.45);
     }
 
     .results.show { display: block; }
 
     .result {
-      padding: 11px 14px;
+      padding: 12px 16px;
       border-bottom: 1px solid var(--border);
       cursor: pointer;
+      display: flex;
+      gap: 12px;
+      align-items: center;
     }
 
     .result:last-child { border-bottom: none; }
     .result:hover, .result:active { background: #222836; }
+
+    .result-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #2a3142;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
     .result .name { font-weight: 600; font-size: 14px; }
     .result .place { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
-    .section {
-      padding: 10px 16px 4px;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.4px;
+    .station-head {
+      padding: 12px 16px 8px;
+      border-bottom: 1px solid var(--border);
     }
 
-    .favs {
-      display: flex;
-      gap: 8px;
-      padding: 0 16px 10px;
-      overflow-x: auto;
-      scrollbar-width: none;
+    .station-head h1 {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
     }
 
-    .favs::-webkit-scrollbar { display: none; }
-
-    .fav {
-      flex-shrink: 0;
-      padding: 8px 12px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
+    .station-head .meta {
       font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      white-space: nowrap;
+      color: var(--muted);
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
-    .fav:active { background: #222836; }
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 1.6s infinite;
+    }
+
+    @keyframes pulse {
+      0%,100% { opacity: 1; }
+      50% { opacity: .35; }
+    }
 
     .filters {
       display: flex;
-      gap: 6px;
-      padding: 8px 16px;
+      gap: 8px;
+      padding: 10px 16px;
       overflow-x: auto;
       flex-shrink: 0;
       scrollbar-width: none;
@@ -196,39 +220,40 @@
 
     .chip {
       flex-shrink: 0;
-      padding: 6px 12px;
+      padding: 7px 14px;
       border-radius: 20px;
-      font-size: 12.5px;
+      font-size: 13px;
       font-weight: 600;
       background: var(--card);
       border: 1px solid var(--border);
       color: var(--muted);
       cursor: pointer;
+      transition: .15s;
     }
 
     .chip.on {
       background: var(--accent);
       border-color: var(--accent);
-      color: #fff;
+      color: #0b0d12;
     }
 
     .deps {
       flex: 1;
       overflow-y: auto;
-      padding-bottom: max(18px, env(safe-area-inset-bottom));
+      padding-bottom: max(20px, env(safe-area-inset-bottom));
     }
 
     .dep {
       display: grid;
-      grid-template-columns: 50px 1fr auto;
-      gap: 10px;
+      grid-template-columns: 54px 1fr auto;
+      gap: 12px;
       align-items: center;
-      padding: 11px 16px;
-      border-bottom: 1px solid rgba(42,48,64,.45);
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(44,51,68,.5);
     }
 
     .badge {
-      height: 26px;
+      height: 28px;
       border-radius: 6px;
       display: flex;
       align-items: center;
@@ -252,7 +277,7 @@
       text-overflow: ellipsis;
     }
 
-    .meta {
+    .dep-meta {
       font-size: 12px;
       color: var(--muted);
       margin-top: 2px;
@@ -260,96 +285,160 @@
 
     .time {
       text-align: right;
-      font-size: 14px;
-      font-weight: 700;
-      font-variant-numeric: tabular-nums;
-      min-width: 48px;
+      min-width: 52px;
     }
 
-    .time small {
-      display: block;
+    .time .min {
+      font-size: 15px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .time .status {
       font-size: 11px;
       font-weight: 600;
       margin-top: 1px;
     }
 
-    .live { color: var(--green); }
-    .delay { color: var(--red); }
+    .status.live { color: var(--green); }
+    .status.delay { color: var(--red); }
 
     .empty {
-      padding: 36px 20px;
+      padding: 40px 20px;
       text-align: center;
       color: var(--muted);
       font-size: 14px;
       line-height: 1.5;
     }
 
+    .disclaimer {
+      padding: 8px 16px;
+      font-size: 11px;
+      color: #f5a623;
+      background: rgba(245,166,35,.08);
+      border-top: 1px solid rgba(245,166,35,.2);
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    /* MAP */
     #map {
       width: 100%;
       height: 100%;
       order: 1;
-      background: #0c0f16;
+      background: #0d1118;
+    }
+
+    .map-controls {
+      position: absolute;
+      right: 12px;
+      bottom: max(24px, env(safe-area-inset-bottom));
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    @media (max-width: 900px) {
+      .map-controls {
+        bottom: calc(46dvh + 16px);
+      }
     }
 
     .map-btn {
-      position: absolute;
-      top: max(12px, env(safe-area-inset-top));
-      right: 12px;
-      z-index: 15;
-      width: 42px;
-      height: 42px;
+      width: 48px;
+      height: 48px;
       background: var(--panel);
       border: 1px solid var(--border);
-      border-radius: 11px;
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       color: var(--text);
-      box-shadow: 0 4px 14px rgba(0,0,0,.35);
+      box-shadow: 0 4px 16px rgba(0,0,0,.4);
       cursor: pointer;
     }
 
-    .map-btn svg { width: 18px; height: 18px; }
+    .map-btn:active { background: var(--card); }
+    .map-btn svg { width: 20px; height: 20px; }
 
-    .user {
+    .user-dot {
       width: 16px;
       height: 16px;
-      background: #5b8def;
+      background: #8ab4f8;
       border: 3px solid #fff;
       border-radius: 50%;
-      box-shadow: 0 0 0 6px rgba(91,141,239,.25);
+      box-shadow: 0 0 0 6px rgba(138,180,248,.3);
     }
 
-    .stop {
+    .stop-dot {
       width: 14px;
       height: 14px;
       background: var(--accent);
       border: 2.5px solid #fff;
       border-radius: 50%;
-      box-shadow: 0 0 0 4px rgba(91,141,239,.2);
+      box-shadow: 0 0 0 4px rgba(138,180,248,.25);
+    }
+
+    .vehicle {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 800;
+      color: #fff;
+      border: 2px solid rgba(255,255,255,.35);
+      box-shadow: 0 2px 8px rgba(0,0,0,.45);
+    }
+
+    .vehicle.u { background: var(--u); }
+    .vehicle.s { background: var(--s); }
+    .vehicle.tram { background: var(--tram); }
+    .vehicle.bus { background: var(--bus); color: #111; }
+
+    .leaflet-popup-content-wrapper {
+      background: var(--card);
+      color: var(--text);
+      border-radius: 12px;
+      box-shadow: 0 8px 28px rgba(0,0,0,.4);
+    }
+
+    .leaflet-popup-tip { background: var(--card); }
+    .leaflet-popup-content {
+      margin: 10px 12px;
+      font-size: 13px;
+      font-weight: 600;
     }
   </style>
 </head>
 <body>
   <div id="app">
     <aside class="panel">
-      <div class="top">
+      <div class="panel-top">
         <div class="handle"></div>
-        <div class="title" id="title">ÖPNV</div>
-        <div class="sub" id="sub">Haltestelle suchen oder Standort nutzen</div>
-
-        <div class="search-box">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <div class="search-wrap">
+          <svg class="icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
           </svg>
           <input id="q" type="text" placeholder="Haltestelle suchen…" autocomplete="off" />
+          <button class="icon-loc" id="btn-loc" title="Mein Standort">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+              <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+            </svg>
+          </button>
           <div id="results" class="results"></div>
         </div>
       </div>
 
-      <div id="fav-section" style="display:none">
-        <div class="section">Zuletzt</div>
-        <div class="favs" id="favs"></div>
+      <div class="station-head" id="station-head" style="display:none">
+        <h1 id="title">–</h1>
+        <div class="meta">
+          <span class="live-dot"></span>
+          <span id="subtitle">Live-Abfahrten</span>
+        </div>
       </div>
 
       <div class="filters" id="filters">
@@ -363,26 +452,33 @@
       <div class="deps" id="deps">
         <div class="empty">
           Suche eine Haltestelle<br>
-          oder nutze den Standort-Button
+          oder tippe auf den Standort-Button
         </div>
+      </div>
+
+      <div class="disclaimer">
+        ⚠ Fahrzeuge auf der Karte sind simuliert (keine echten GPS-Daten der MVG)
       </div>
     </aside>
 
     <div id="map"></div>
-    <button class="map-btn" id="loc" title="Standort">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="3"/>
-        <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
-      </svg>
-    </button>
+
+    <div class="map-controls">
+      <button class="map-btn" id="btn-locate" title="Standort">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+        </svg>
+      </button>
+    </div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     const map = L.map("map", {
       zoomControl: false,
-      attributionControl: false
-    }).setView([48.137, 11.575], 12);
+      attributionControl: false,
+      preferCanvas: true
+    }).setView([48.137, 11.575], 13);
 
     L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
       maxZoom: 19
@@ -392,60 +488,14 @@
 
     let userMarker = null;
     let stopMarker = null;
+    let vehicleMarkers = [];
+    let vehicleTimers = [];
     let current = null;
     let allDeps = [];
     let filter = "all";
-    let refresh = null;
+    let refreshTimer = null;
 
-    // Favoriten aus localStorage
-    function getFavs() {
-      try { return JSON.parse(localStorage.getItem("oepnv_favs") || "[]"); }
-      catch { return []; }
-    }
-
-    function saveFav(station) {
-      let favs = getFavs().filter(f => f.id !== station.id);
-      favs.unshift({
-        id: station.id,
-        name: station.name,
-        lat: station.lat,
-        lon: station.lon,
-        place: station.place || ""
-      });
-      favs = favs.slice(0, 6);
-      localStorage.setItem("oepnv_favs", JSON.stringify(favs));
-      renderFavs();
-    }
-
-    function renderFavs() {
-      const favs = getFavs();
-      const section = document.getElementById("fav-section");
-      const box = document.getElementById("favs");
-
-      if (!favs.length) {
-        section.style.display = "none";
-        return;
-      }
-
-      section.style.display = "block";
-      box.innerHTML = favs.map(f => `
-        <div class="fav" data-id="${f.id}" data-name="${f.name}" data-lat="${f.lat}" data-lon="${f.lon}" data-place="${f.place}">
-          ${f.name}
-        </div>
-      `).join("");
-
-      box.querySelectorAll(".fav").forEach(el => {
-        el.onclick = () => select({
-          id: el.dataset.id,
-          name: el.dataset.name,
-          lat: +el.dataset.lat,
-          lon: +el.dataset.lon,
-          place: el.dataset.place
-        });
-      });
-    }
-
-    function type(t, label) {
+    function typeOf(t, label) {
       const a = (t || "").toUpperCase();
       const b = (label || "").toUpperCase();
       if (a.includes("UBAHN") || b.startsWith("U")) return "u";
@@ -458,6 +508,53 @@
     function minutes(ms) {
       const m = Math.round((ms - Date.now()) / 60000);
       return m <= 0 ? "jetzt" : m + " min";
+    }
+
+    function clearVehicles() {
+      vehicleTimers.forEach(t => clearInterval(t));
+      vehicleTimers = [];
+      vehicleMarkers.forEach(m => map.removeLayer(m));
+      vehicleMarkers = [];
+    }
+
+    // Simulierte Fahrzeuge – bewegen sich leicht um die Haltestelle
+    function spawnVehicles(deps, lat, lon) {
+      clearVehicles();
+      const list = deps.slice(0, 8);
+
+      list.forEach((d, i) => {
+        const label = d.label || d.line || "?";
+        const t = typeOf(d.transportType || d.product, label);
+        const dest = d.destination || d.direction || "";
+
+        // Startposition in einem Kreis um die Station
+        const angle = (i / list.length) * Math.PI * 2;
+        const dist = 0.0015 + Math.random() * 0.0025;
+        let vLat = lat + Math.cos(angle) * dist;
+        let vLon = lon + Math.sin(angle) * dist * 1.35;
+
+        const icon = L.divIcon({
+          className: "",
+          html: `<div class="vehicle ${t}">${label.substring(0,3)}</div>`,
+          iconSize: [26, 26],
+          iconAnchor: [13, 13]
+        });
+
+        const marker = L.marker([vLat, vLon], { icon, zIndexOffset: 700 }).addTo(map);
+        marker.bindPopup(`<b>${label}</b><br>${dest}<br><small>simuliert</small>`);
+        vehicleMarkers.push(marker);
+
+        // Leichte Bewegung
+        const timer = setInterval(() => {
+          if (!map.hasLayer(marker)) return;
+          const pos = marker.getLatLng();
+          const dLat = (Math.random() - 0.5) * 0.0002;
+          const dLon = (Math.random() - 0.5) * 0.0002;
+          marker.setLatLng([pos.lat + dLat, pos.lng + dLon]);
+        }, 3500 + Math.random() * 2500);
+
+        vehicleTimers.push(timer);
+      });
     }
 
     async function search(q) {
@@ -479,9 +576,16 @@
         }
 
         box.innerHTML = list.map(s => `
-          <div class="result" data-id="${s.globalId || s.id}" data-name="${s.name}" data-lat="${s.latitude}" data-lon="${s.longitude}" data-place="${s.place || ""}">
-            <div class="name">${s.name}</div>
-            <div class="place">${s.place || ""}</div>
+          <div class="result" data-id="${s.globalId||s.id}" data-name="${s.name}" data-lat="${s.latitude}" data-lon="${s.longitude}" data-place="${s.place||""}">
+            <div class="result-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2a7 7 0 0 1 7 7c0 5-7 13-7 13S5 14 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.2"/>
+              </svg>
+            </div>
+            <div>
+              <div class="name">${s.name}</div>
+              <div class="place">${s.place||""}</div>
+            </div>
           </div>
         `).join("");
 
@@ -506,9 +610,10 @@
       }
     }
 
-    async function load(station) {
+    async function loadDeps(station) {
+      document.getElementById("station-head").style.display = "block";
       document.getElementById("title").textContent = station.name;
-      document.getElementById("sub").textContent = station.place ? station.place + " · Live" : "Live-Abfahrten";
+      document.getElementById("subtitle").textContent = station.place ? station.place + " · Live" : "Live-Abfahrten";
       document.getElementById("deps").innerHTML = `<div class="empty">Lade Abfahrten…</div>`;
 
       try {
@@ -519,15 +624,17 @@
         const data = await res.json();
         allDeps = Array.isArray(data) ? data : (data.departures || []);
         render();
+        spawnVehicles(allDeps, station.lat, station.lon);
       } catch {
-        document.getElementById("deps").innerHTML = `<div class="empty">Abfahrten nicht ladbar<br><small>CORS oder API</small></div>`;
+        document.getElementById("deps").innerHTML = `<div class="empty">Abfahrten nicht ladbar<br><small>CORS / API</small></div>`;
+        clearVehicles();
       }
     }
 
     function render() {
       let list = allDeps;
       if (filter !== "all") {
-        list = list.filter(d => type(d.transportType || d.product, d.label || d.line) === filter);
+        list = list.filter(d => typeOf(d.transportType || d.product, d.label || d.line) === filter);
       }
 
       if (!list.length) {
@@ -538,28 +645,28 @@
       const now = Date.now();
       let html = "";
 
-      list.slice(0, 35).forEach(d => {
+      list.slice(0, 30).forEach(d => {
         const label = d.label || d.line || "?";
         const dest = d.destination || d.direction || "–";
-        const t = type(d.transportType || d.product, label);
+        const t = typeOf(d.transportType || d.product, label);
         const rt = d.realtimeDepartureTime || d.departureTime || now;
         const delay = d.delayInMinutes || 0;
         const platform = d.platform || "";
 
-        let extra = "";
-        if (delay > 0) extra = `<small class="delay">+${delay} min</small>`;
-        else if (d.realtime) extra = `<small class="live">LIVE</small>`;
+        let status = "";
+        if (delay > 0) status = `<div class="status delay">+${delay} min</div>`;
+        else if (d.realtime) status = `<div class="status live">LIVE</div>`;
 
         html += `
           <div class="dep">
             <div class="badge ${t}">${label}</div>
             <div>
               <div class="dest">${dest}</div>
-              <div class="meta">${platform ? "Gl. " + platform : ""}${d.cancelled ? " · entfällt" : ""}</div>
+              <div class="dep-meta">${platform ? "Gl. " + platform : ""}${d.cancelled ? " · entfällt" : ""}</div>
             </div>
             <div class="time">
-              ${minutes(rt)}
-              ${extra}
+              <div class="min">${minutes(rt)}</div>
+              ${status}
             </div>
           </div>
         `;
@@ -570,23 +677,23 @@
 
     function select(station) {
       current = station;
-      saveFav(station);
 
       if (stopMarker) map.removeLayer(stopMarker);
       stopMarker = L.marker([station.lat, station.lon], {
         icon: L.divIcon({
           className: "",
-          html: '<div class="stop"></div>',
+          html: '<div class="stop-dot"></div>',
           iconSize: [14, 14],
           iconAnchor: [7, 7]
-        })
+        }),
+        zIndexOffset: 800
       }).addTo(map);
 
-      map.flyTo([station.lat, station.lon], 15.5, { duration: 0.7 });
-      load(station);
+      map.flyTo([station.lat, station.lon], 15.5, { duration: 0.75 });
+      loadDeps(station);
 
-      if (refresh) clearInterval(refresh);
-      refresh = setInterval(() => load(station), 30000);
+      if (refreshTimer) clearInterval(refreshTimer);
+      refreshTimer = setInterval(() => loadDeps(station), 30000);
     }
 
     function locate() {
@@ -602,29 +709,31 @@
         userMarker = L.marker([latitude, longitude], {
           icon: L.divIcon({
             className: "",
-            html: '<div class="user"></div>',
+            html: '<div class="user-dot"></div>',
             iconSize: [16, 16],
             iconAnchor: [8, 8]
-          })
+          }),
+          zIndexOffset: 1000
         }).addTo(map);
 
         map.setView([latitude, longitude], 14);
-        document.getElementById("title").textContent = "Dein Standort";
-        document.getElementById("sub").textContent = "Jetzt Haltestelle suchen";
-        document.getElementById("deps").innerHTML = `<div class="empty">Standort gefunden.<br>Suche eine Haltestelle in der Nähe.</div>`;
+        document.getElementById("station-head").style.display = "none";
+        document.getElementById("deps").innerHTML = `<div class="empty">Standort gefunden.<br>Suche jetzt eine Haltestelle.</div>`;
+        clearVehicles();
       }, () => {
         alert("Standort konnte nicht ermittelt werden");
       }, { enableHighAccuracy: true, timeout: 10000 });
     }
 
     // Events
-    let timer;
+    let searchTimer;
     document.getElementById("q").addEventListener("input", e => {
-      clearTimeout(timer);
-      timer = setTimeout(() => search(e.target.value.trim()), 200);
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => search(e.target.value.trim()), 200);
     });
 
-    document.getElementById("loc").onclick = locate;
+    document.getElementById("btn-loc").onclick = locate;
+    document.getElementById("btn-locate").onclick = locate;
 
     document.getElementById("filters").onclick = e => {
       const chip = e.target.closest(".chip");
@@ -636,13 +745,10 @@
     };
 
     document.addEventListener("click", e => {
-      if (!e.target.closest(".search-box")) {
+      if (!e.target.closest(".search-wrap")) {
         document.getElementById("results").classList.remove("show");
       }
     });
-
-    // Start
-    renderFavs();
   </script>
 </body>
 </html>
