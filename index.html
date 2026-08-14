@@ -7,12 +7,12 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     :root {
-      --bg: #0a0b10;
-      --panel: #11141b;
-      --card: #181c26;
-      --border: #2a3040;
-      --text: #f0f2f7;
-      --muted: #8a93a6;
+      --bg: #0a0b11;
+      --panel: #11141c;
+      --card: #181c27;
+      --border: #2a3142;
+      --text: #f1f3f8;
+      --muted: #8b93a7;
       --accent: #5b8def;
       --u: #0065b0;
       --s: #008c4f;
@@ -34,11 +34,11 @@
 
     #app {
       display: grid;
-      grid-template-columns: 400px 1fr;
+      grid-template-columns: 410px 1fr;
       height: 100dvh;
     }
 
-    @media (max-width: 880px) {
+    @media (max-width: 900px) {
       #app {
         grid-template-columns: 1fr;
         grid-template-rows: 1fr auto;
@@ -54,12 +54,12 @@
       max-height: 100dvh;
     }
 
-    @media (max-width: 880px) {
+    @media (max-width: 900px) {
       .panel {
         border-right: none;
         border-radius: 20px 20px 0 0;
-        max-height: 46dvh;
-        box-shadow: 0 -10px 40px rgba(0,0,0,.5);
+        max-height: 48dvh;
+        box-shadow: 0 -12px 40px rgba(0,0,0,.5);
         order: 2;
       }
     }
@@ -70,7 +70,7 @@
       flex-shrink: 0;
     }
 
-    @media (max-width: 880px) {
+    @media (max-width: 900px) {
       .handle {
         width: 36px;
         height: 4px;
@@ -109,9 +109,7 @@
       outline: none;
     }
 
-    .search-box input:focus {
-      border-color: var(--accent);
-    }
+    .search-box input:focus { border-color: var(--accent); }
 
     .search-box svg {
       position: absolute;
@@ -132,11 +130,11 @@
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 12px;
-      max-height: 260px;
+      max-height: 280px;
       overflow-y: auto;
       display: none;
-      z-index: 30;
-      box-shadow: 0 12px 30px rgba(0,0,0,.4);
+      z-index: 40;
+      box-shadow: 0 12px 32px rgba(0,0,0,.4);
     }
 
     .results.show { display: block; }
@@ -152,10 +150,43 @@
     .result .name { font-weight: 600; font-size: 14px; }
     .result .place { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
+    .section {
+      padding: 10px 16px 4px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .favs {
+      display: flex;
+      gap: 8px;
+      padding: 0 16px 10px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .favs::-webkit-scrollbar { display: none; }
+
+    .fav {
+      flex-shrink: 0;
+      padding: 8px 12px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .fav:active { background: #222836; }
+
     .filters {
       display: flex;
       gap: 6px;
-      padding: 10px 16px;
+      padding: 8px 16px;
       overflow-x: auto;
       flex-shrink: 0;
       scrollbar-width: none;
@@ -304,16 +335,21 @@
     <aside class="panel">
       <div class="top">
         <div class="handle"></div>
-        <div class="title" id="title">Haltestelle suchen</div>
-        <div class="sub" id="sub">Suche starten oder Standort nutzen</div>
+        <div class="title" id="title">ÖPNV</div>
+        <div class="sub" id="sub">Haltestelle suchen oder Standort nutzen</div>
 
         <div class="search-box">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
           </svg>
-          <input id="q" type="text" placeholder="Haltestelle eingeben…" autocomplete="off" />
+          <input id="q" type="text" placeholder="Haltestelle suchen…" autocomplete="off" />
           <div id="results" class="results"></div>
         </div>
+      </div>
+
+      <div id="fav-section" style="display:none">
+        <div class="section">Zuletzt</div>
+        <div class="favs" id="favs"></div>
       </div>
 
       <div class="filters" id="filters">
@@ -327,7 +363,7 @@
       <div class="deps" id="deps">
         <div class="empty">
           Suche eine Haltestelle<br>
-          oder tippe auf den Standort-Button
+          oder nutze den Standort-Button
         </div>
       </div>
     </aside>
@@ -360,6 +396,54 @@
     let allDeps = [];
     let filter = "all";
     let refresh = null;
+
+    // Favoriten aus localStorage
+    function getFavs() {
+      try { return JSON.parse(localStorage.getItem("oepnv_favs") || "[]"); }
+      catch { return []; }
+    }
+
+    function saveFav(station) {
+      let favs = getFavs().filter(f => f.id !== station.id);
+      favs.unshift({
+        id: station.id,
+        name: station.name,
+        lat: station.lat,
+        lon: station.lon,
+        place: station.place || ""
+      });
+      favs = favs.slice(0, 6);
+      localStorage.setItem("oepnv_favs", JSON.stringify(favs));
+      renderFavs();
+    }
+
+    function renderFavs() {
+      const favs = getFavs();
+      const section = document.getElementById("fav-section");
+      const box = document.getElementById("favs");
+
+      if (!favs.length) {
+        section.style.display = "none";
+        return;
+      }
+
+      section.style.display = "block";
+      box.innerHTML = favs.map(f => `
+        <div class="fav" data-id="${f.id}" data-name="${f.name}" data-lat="${f.lat}" data-lon="${f.lon}" data-place="${f.place}">
+          ${f.name}
+        </div>
+      `).join("");
+
+      box.querySelectorAll(".fav").forEach(el => {
+        el.onclick = () => select({
+          id: el.dataset.id,
+          name: el.dataset.name,
+          lat: +el.dataset.lat,
+          lon: +el.dataset.lon,
+          place: el.dataset.place
+        });
+      });
+    }
 
     function type(t, label) {
       const a = (t || "").toUpperCase();
@@ -454,7 +538,7 @@
       const now = Date.now();
       let html = "";
 
-      list.slice(0, 30).forEach(d => {
+      list.slice(0, 35).forEach(d => {
         const label = d.label || d.line || "?";
         const dest = d.destination || d.direction || "–";
         const t = type(d.transportType || d.product, label);
@@ -486,6 +570,7 @@
 
     function select(station) {
       current = station;
+      saveFav(station);
 
       if (stopMarker) map.removeLayer(stopMarker);
       stopMarker = L.marker([station.lat, station.lon], {
@@ -526,7 +611,7 @@
         map.setView([latitude, longitude], 14);
         document.getElementById("title").textContent = "Dein Standort";
         document.getElementById("sub").textContent = "Jetzt Haltestelle suchen";
-        document.getElementById("deps").innerHTML = `<div class="empty">Standort gefunden.<br>Suche jetzt eine Haltestelle.</div>`;
+        document.getElementById("deps").innerHTML = `<div class="empty">Standort gefunden.<br>Suche eine Haltestelle in der Nähe.</div>`;
       }, () => {
         alert("Standort konnte nicht ermittelt werden");
       }, { enableHighAccuracy: true, timeout: 10000 });
@@ -555,6 +640,9 @@
         document.getElementById("results").classList.remove("show");
       }
     });
+
+    // Start
+    renderFavs();
   </script>
 </body>
 </html>
