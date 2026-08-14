@@ -7,11 +7,11 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     :root {
-      --bg: #090b10;
-      --surface: #12151c;
-      --surface2: #1a1e28;
-      --border: #2a3040;
-      --text: #f1f3f8;
+      --bg: #0a0c12;
+      --surface: #12151d;
+      --surface2: #1a1e29;
+      --border: #2a3142;
+      --text: #f2f4f8;
       --muted: #8b93a7;
       --accent: #4f8cff;
       --u: #0065b0;
@@ -20,7 +20,6 @@
       --bus: #f5a623;
       --success: #34d399;
       --danger: #f87171;
-      --radius: 16px;
     }
 
     * {
@@ -40,18 +39,18 @@
 
     #app {
       display: grid;
-      grid-template-columns: 420px 1fr;
+      grid-template-columns: 430px 1fr;
       height: 100dvh;
     }
 
-    @media (max-width: 900px) {
+    @media (max-width: 920px) {
       #app {
         grid-template-columns: 1fr;
         grid-template-rows: 1fr auto;
       }
     }
 
-    /* ========== PANEL ========== */
+    /* PANEL */
     .panel {
       background: var(--surface);
       display: flex;
@@ -62,16 +61,13 @@
       overflow: hidden;
     }
 
-    @media (max-width: 900px) {
+    @media (max-width: 920px) {
       .panel {
         border-right: none;
         border-radius: 22px 22px 0 0;
-        max-height: 50dvh;
-        box-shadow: 0 -12px 40px rgba(0,0,0,0.55);
+        max-height: 48dvh;
+        box-shadow: 0 -14px 50px rgba(0,0,0,0.55);
         order: 2;
-      }
-      .panel.expanded {
-        max-height: 78dvh;
       }
     }
 
@@ -81,14 +77,12 @@
       flex-shrink: 0;
     }
 
-    @media (max-width: 900px) {
-      .panel-header {
-        padding-top: 10px;
-      }
+    @media (max-width: 920px) {
+      .panel-header { padding-top: 10px; }
       .handle {
-        width: 38px;
+        width: 40px;
         height: 4px;
-        background: #3a4255;
+        background: #3a4358;
         border-radius: 2px;
         margin: 0 auto 12px;
       }
@@ -115,15 +109,14 @@
       height: 7px;
       background: var(--success);
       border-radius: 50%;
-      animation: pulse 1.7s infinite;
+      animation: pulse 1.6s infinite;
     }
 
     @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(0.85); }
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.35; }
     }
 
-    /* Search */
     .search-wrap {
       margin-top: 14px;
       position: relative;
@@ -139,7 +132,6 @@
       color: var(--text);
       font-size: 15px;
       outline: none;
-      transition: border-color 0.15s;
     }
 
     .search-wrap input:focus {
@@ -165,10 +157,10 @@
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: 13px;
-      max-height: 280px;
+      max-height: 300px;
       overflow-y: auto;
       display: none;
-      z-index: 60;
+      z-index: 70;
       box-shadow: 0 16px 40px rgba(0,0,0,0.45);
     }
 
@@ -187,7 +179,6 @@
     .result-item .name { font-weight: 600; font-size: 14.5px; }
     .result-item .meta { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
 
-    /* Filters */
     .filters {
       display: flex;
       gap: 7px;
@@ -209,7 +200,6 @@
       border: 1px solid var(--border);
       color: var(--muted);
       cursor: pointer;
-      transition: 0.15s;
     }
 
     .chip.active {
@@ -218,7 +208,6 @@
       color: #fff;
     }
 
-    /* Departures */
     .deps {
       flex: 1;
       overflow-y: auto;
@@ -232,12 +221,10 @@
       gap: 12px;
       align-items: center;
       padding: 13px 18px;
-      border-bottom: 1px solid rgba(42,48,64,0.55);
-      transition: background 0.12s;
+      border-bottom: 1px solid rgba(42,48,64,0.5);
     }
 
     .dep:last-child { border-bottom: none; }
-    .dep:active { background: rgba(255,255,255,0.03); }
 
     .line-badge {
       width: 52px;
@@ -249,7 +236,6 @@
       font-weight: 800;
       font-size: 12.5px;
       color: #fff;
-      letter-spacing: -0.2px;
     }
 
     .line-badge.u { background: var(--u); }
@@ -322,7 +308,7 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ========== MAP ========== */
+    /* MAP */
     #map {
       width: 100%;
       height: 100%;
@@ -353,27 +339,21 @@
       color: var(--text);
       box-shadow: 0 4px 18px rgba(0,0,0,0.4);
       cursor: pointer;
-      transition: background 0.15s;
     }
 
-    .map-btn:active {
-      background: var(--surface2);
-    }
-
-    .map-btn svg {
-      width: 20px;
-      height: 20px;
-    }
+    .map-btn:active { background: var(--surface2); }
+    .map-btn svg { width: 20px; height: 20px; }
 
     /* Markers */
     .station-marker {
-      width: 14px;
-      height: 14px;
+      width: 13px;
+      height: 13px;
       background: var(--accent);
       border: 2.5px solid #fff;
       border-radius: 50%;
-      box-shadow: 0 0 0 4px rgba(79,140,255,0.25);
+      box-shadow: 0 0 0 3px rgba(79,140,255,0.22);
       cursor: pointer;
+      transition: transform 0.15s;
     }
 
     .station-marker.active {
@@ -400,10 +380,7 @@
       box-shadow: 0 8px 30px rgba(0,0,0,0.4);
     }
 
-    .leaflet-popup-tip {
-      background: var(--surface2);
-    }
-
+    .leaflet-popup-tip { background: var(--surface2); }
     .leaflet-popup-content {
       margin: 10px 12px;
       font-size: 13.5px;
@@ -461,8 +438,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // ==================== STATE ====================
-    let map, userMarker, activeStationMarker;
+    let map, userMarker;
     let stationMarkers = [];
     let currentStation = null;
     let allDepartures = [];
@@ -471,7 +447,6 @@
     let userLat = null;
     let userLon = null;
 
-    // ==================== MAP ====================
     function initMap() {
       map = L.map("map", {
         zoomControl: false,
@@ -489,27 +464,29 @@
     function clearStationMarkers() {
       stationMarkers.forEach(m => map.removeLayer(m));
       stationMarkers = [];
-      activeStationMarker = null;
     }
 
     function addStationMarker(station, isActive = false) {
       const icon = L.divIcon({
         className: "",
         html: `<div class="station-marker ${isActive ? "active" : ""}"></div>`,
-        iconSize: isActive ? [18, 18] : [14, 14],
-        iconAnchor: isActive ? [9, 9] : [7, 7]
+        iconSize: isActive ? [18, 18] : [13, 13],
+        iconAnchor: isActive ? [9, 9] : [6.5, 6.5]
       });
 
       const marker = L.marker([station.lat, station.lon], {
         icon,
-        zIndexOffset: isActive ? 850 : 600
+        zIndexOffset: isActive ? 900 : 600
       }).addTo(map);
 
-      marker.bindPopup(`<b>${station.name}</b>${station.place ? "<br>" + station.place : ""}`);
+      const distText = station.dist != null
+        ? (station.dist < 1000 ? Math.round(station.dist) + " m" : (station.dist / 1000).toFixed(1) + " km")
+        : "";
+
+      marker.bindPopup(`<b>${station.name}</b>${station.place ? "<br>" + station.place : ""}${distText ? "<br>" + distText : ""}`);
       marker.on("click", () => selectStation(station));
 
       stationMarkers.push(marker);
-      if (isActive) activeStationMarker = marker;
       return marker;
     }
 
@@ -526,7 +503,6 @@
       }).addTo(map);
     }
 
-    // ==================== HELPERS ====================
     function getLineType(type, label) {
       const t = (type || "").toUpperCase();
       const l = (label || "").toUpperCase();
@@ -549,11 +525,10 @@
       const φ2 = lat2 * Math.PI / 180;
       const Δφ = (lat2 - lat1) * Math.PI / 180;
       const Δλ = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(Δφ/2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) ** 2;
+      const a = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
-    // ==================== API ====================
     async function searchStations(query) {
       const box = document.getElementById("results");
       if (!query || query.length < 2) {
@@ -562,13 +537,9 @@
       }
 
       try {
-        const res = await fetch(
-          `https://www.mvg.de/api/bgw-pt/v3/locations?query=${encodeURIComponent(query)}`
-        );
+        const res = await fetch(`https://www.mvg.de/api/bgw-pt/v3/locations?query=${encodeURIComponent(query)}`);
         const data = await res.json();
-        const list = (Array.isArray(data) ? data : [])
-          .filter(x => x.globalId || x.id)
-          .slice(0, 8);
+        const list = (Array.isArray(data) ? data : []).filter(x => x.globalId || x.id).slice(0, 10);
 
         if (!list.length) {
           box.innerHTML = `<div class="result-item"><div class="name">Keine Treffer</div></div>`;
@@ -609,27 +580,33 @@
       }
     }
 
+    // Bessere Nearby: mehrere Suchen + Distanz-Sortierung + mehr Stationen
     async function findNearbyStations(lat, lon) {
-      // Da die MVG-API kein sauberes Nearby-by-coords hat, nutzen wir eine
-      // praktische Näherung: bekannte große Stationen + Suche über den User-Standort.
-      // Für den Start laden wir ein paar zentrale Treffer und sortieren nach Distanz.
+      const queries = [
+        "Bahnhof", "Hauptbahnhof", "Zentrum", "Marienplatz", "Markt",
+        "Platz", "Straße", "U-Bahn", "S-Bahn", "Haltestelle"
+      ];
+
+      let candidates = [];
+
       try {
-        // Wir nutzen eine generische Suche und filtern später nach Nähe.
-        // Besserer Ansatz: mehrere Suchen oder bekannte Stationen.
-        // Hier: wir versuchen erstmal "Bahnhof" + "Zentrum" und nehmen die nächsten.
-        const queries = ["Bahnhof", "Zentrum", "Marienplatz", "Hauptbahnhof"];
-        let candidates = [];
+        const promises = queries.map(q =>
+          fetch(`https://www.mvg.de/api/bgw-pt/v3/locations?query=${encodeURIComponent(q)}`)
+            .then(r => r.json())
+            .then(data => Array.isArray(data) ? data : [])
+            .catch(() => [])
+        );
 
-        for (const q of queries) {
-          const res = await fetch(
-            `https://www.mvg.de/api/bgw-pt/v3/locations?query=${encodeURIComponent(q)}`
-          );
-          const data = await res.json();
-          const list = (Array.isArray(data) ? data : []).filter(x => x.latitude && x.longitude);
-          candidates = candidates.concat(list);
-        }
+        const results = await Promise.all(promises);
+        results.forEach(list => {
+          list.forEach(s => {
+            if (s.latitude && s.longitude && (s.globalId || s.id)) {
+              candidates.push(s);
+            }
+          });
+        });
 
-        // Duplikate entfernen
+        // Duplikate raus
         const seen = new Set();
         candidates = candidates.filter(s => {
           const id = s.globalId || s.id;
@@ -638,7 +615,7 @@
           return true;
         });
 
-        // Nach Distanz sortieren
+        // Distanz berechnen + sortieren
         candidates = candidates
           .map(s => ({
             id: s.globalId || s.id,
@@ -648,12 +625,13 @@
             place: s.place || "",
             dist: distance(lat, lon, s.latitude, s.longitude)
           }))
+          .filter(s => s.dist < 12000) // max 12 km
           .sort((a, b) => a.dist - b.dist)
-          .slice(0, 12);
+          .slice(0, 25); // deutlich mehr Stationen
 
         return candidates;
       } catch (e) {
-        console.warn("Nearby failed", e);
+        console.warn(e);
         return [];
       }
     }
@@ -661,8 +639,16 @@
     async function loadDepartures(station) {
       const depsEl = document.getElementById("deps");
       document.getElementById("station-name").textContent = station.name;
-      document.getElementById("station-sub").textContent =
-        (station.place ? station.place + " · " : "") + "Live-Abfahrten";
+
+      let sub = "Live-Abfahrten";
+      if (station.place) sub = station.place + " · Live";
+      if (station.dist != null) {
+        const d = station.dist < 1000
+          ? Math.round(station.dist) + " m"
+          : (station.dist / 1000).toFixed(1) + " km";
+        sub = d + " · " + sub;
+      }
+      document.getElementById("station-sub").textContent = sub;
 
       depsEl.innerHTML = `
         <div class="loading">
@@ -672,13 +658,9 @@
       `;
 
       try {
-        let res = await fetch(
-          `https://www.mvg.de/api/bgw-pt/v3/departures?globalId=${encodeURIComponent(station.id)}`
-        );
+        let res = await fetch(`https://www.mvg.de/api/bgw-pt/v3/departures?globalId=${encodeURIComponent(station.id)}`);
         if (!res.ok) {
-          res = await fetch(
-            `https://www.mvg.de/api/fib/v2/departure?globalId=${encodeURIComponent(station.id)}`
-          );
+          res = await fetch(`https://www.mvg.de/api/fib/v2/departure?globalId=${encodeURIComponent(station.id)}`);
         }
 
         const data = await res.json();
@@ -714,7 +696,7 @@
       const now = Date.now();
       let html = "";
 
-      list.slice(0, 30).forEach(d => {
+      list.slice(0, 35).forEach(d => {
         const label = d.label || d.line || "?";
         const dest = d.destination || d.direction || "–";
         const type = getLineType(d.transportType || d.product, label);
@@ -748,29 +730,27 @@
       depsEl.innerHTML = html;
     }
 
-    // ==================== STATION SELECT ====================
     function selectStation(station) {
       currentStation = station;
 
-      // Marker neu setzen
       clearStationMarkers();
+      // Alle bisherigen Nearby-Marker bleiben sinnvollerweise nicht,
+      // aber wir setzen zumindest die aktive + ein paar drumherum neu,
+      // wenn wir sie noch haben. Für Einfachheit: nur die aktive markieren.
       addStationMarker(station, true);
 
-      map.flyTo([station.lat, station.lon], 15.5, { duration: 0.85 });
+      map.flyTo([station.lat, station.lon], 15.6, { duration: 0.85 });
       loadDepartures(station);
 
       if (refreshTimer) clearInterval(refreshTimer);
       refreshTimer = setInterval(() => loadDepartures(station), 30000);
     }
 
-    // ==================== GEOLOCATION ====================
-    async function locateUser(force = false) {
+    async function locateUser() {
       if (!navigator.geolocation) {
         document.getElementById("station-name").textContent = "Standort nicht verfügbar";
         document.getElementById("station-sub").textContent = "Bitte Haltestelle suchen";
-        document.getElementById("deps").innerHTML = `
-          <div class="empty">Standortzugriff wird nicht unterstützt.<br>Suche eine Haltestelle.</div>
-        `;
+        document.getElementById("deps").innerHTML = `<div class="empty">Standortzugriff wird nicht unterstützt.</div>`;
         return;
       }
 
@@ -788,20 +768,16 @@
           setUserMarker(userLat, userLon);
           map.setView([userLat, userLon], 14);
 
-          // Nahe Haltestellen suchen und auf Karte anzeigen
           const nearby = await findNearbyStations(userLat, userLon);
 
           clearStationMarkers();
-          nearby.forEach((s, i) => {
-            addStationMarker(s, i === 0);
-          });
+          nearby.forEach((s, i) => addStationMarker(s, i === 0));
 
           if (nearby.length > 0) {
-            // Nächste Station automatisch auswählen
             selectStation(nearby[0]);
           } else {
             document.getElementById("station-name").textContent = "Dein Standort";
-            document.getElementById("station-sub").textContent = "Keine Haltestellen in der Nähe gefunden";
+            document.getElementById("station-sub").textContent = "Keine Haltestellen gefunden";
             document.getElementById("deps").innerHTML = `
               <div class="empty">
                 Standort gefunden.<br>
@@ -810,31 +786,27 @@
             `;
           }
         },
-        (err) => {
-          console.warn(err);
+        () => {
           document.getElementById("station-name").textContent = "Standort blockiert";
-          document.getElementById("station-sub").textContent = "Bitte Zugriff erlauben oder suchen";
+          document.getElementById("station-sub").textContent = "Zugriff erlauben oder suchen";
           document.getElementById("deps").innerHTML = `
-            <div class="empty">
-              Standort konnte nicht ermittelt werden.<br>
-              Erlaube den Zugriff oder suche eine Haltestelle.
-            </div>
+            <div class="empty">Standort konnte nicht ermittelt werden.<br>Erlaube den Zugriff oder suche manuell.</div>
           `;
         },
         { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 }
       );
     }
 
-    // ==================== EVENTS ====================
+    // Events
     let searchTimeout;
-    document.getElementById("search").addEventListener("input", (e) => {
+    document.getElementById("search").addEventListener("input", e => {
       clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(() => searchStations(e.target.value.trim()), 230);
+      searchTimeout = setTimeout(() => searchStations(e.target.value.trim()), 220);
     });
 
-    document.getElementById("btn-locate").addEventListener("click", () => locateUser(true));
+    document.getElementById("btn-locate").addEventListener("click", locateUser);
 
-    document.getElementById("filters").addEventListener("click", (e) => {
+    document.getElementById("filters").addEventListener("click", e => {
       const chip = e.target.closest(".chip");
       if (!chip) return;
       document.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
@@ -843,13 +815,13 @@
       renderDepartures();
     });
 
-    document.addEventListener("click", (e) => {
+    document.addEventListener("click", e => {
       if (!e.target.closest(".search-wrap")) {
         document.getElementById("results").classList.remove("open");
       }
     });
 
-    // ==================== START ====================
+    // Start
     initMap();
     locateUser();
   </script>
