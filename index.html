@@ -2,47 +2,57 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>MVV Live</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>MVV ÖPNV</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     :root {
-      --bg: #0b0d12;
-      --panel: #141820;
-      --border: #252b38;
-      --text: #f0f2f5;
-      --muted: #8b93a7;
-      --accent: #5b8def;
+      --bg: #0c0e14;
+      --surface: #151922;
+      --surface2: #1c212d;
+      --border: #2a3142;
+      --text: #f1f3f7;
+      --muted: #8b93a8;
+      --accent: #4f8cff;
       --u: #0065b0;
       --s: #008c4f;
       --tram: #e30613;
       --bus: #f5a623;
+      --success: #3dd68c;
+      --danger: #ff5c5c;
     }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
       background: var(--bg);
       color: var(--text);
       height: 100dvh;
       overflow: hidden;
-      user-select: none;
     }
 
+    /* ========== MAP ========== */
     #map {
       position: absolute;
       inset: 0;
       z-index: 1;
     }
 
-    /* Top Bar */
+    /* ========== TOP BAR ========== */
     .topbar {
       position: absolute;
-      top: 0; left: 0; right: 0;
+      top: 0;
+      left: 0;
+      right: 0;
       z-index: 1000;
-      padding: 12px 16px 0;
-      background: linear-gradient(to bottom, rgba(11,13,18,0.95) 60%, transparent);
+      padding: max(12px, env(safe-area-inset-top)) 14px 0;
+      background: linear-gradient(to bottom, rgba(12,14,20,0.97) 55%, transparent);
       pointer-events: none;
     }
 
@@ -50,51 +60,79 @@
       pointer-events: auto;
       display: flex;
       gap: 10px;
-      align-items: center;
     }
 
-    .search-wrap {
+    .search-box {
       flex: 1;
       position: relative;
     }
 
-    .search-wrap input {
+    .search-box input {
       width: 100%;
-      padding: 14px 16px 14px 44px;
-      background: var(--panel);
+      height: 48px;
+      padding: 0 16px 0 44px;
+      background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 16px;
+      border-radius: 14px;
       color: var(--text);
       font-size: 16px;
       outline: none;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.35);
     }
 
-    .search-wrap svg {
+    .search-box input::placeholder {
+      color: var(--muted);
+    }
+
+    .search-box svg {
       position: absolute;
       left: 15px;
       top: 50%;
       transform: translateY(-50%);
       width: 18px;
       height: 18px;
-      opacity: 0.5;
+      opacity: 0.55;
+      pointer-events: none;
     }
 
-    .results {
-      position: absolute;
-      top: 100%;
-      left: 0; right: 0;
-      margin-top: 6px;
-      background: var(--panel);
+    .btn-nearby {
+      width: 48px;
+      height: 48px;
+      background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 14px;
-      max-height: 260px;
-      overflow-y: auto;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-      display: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+      flex-shrink: 0;
     }
 
-    .results.show { display: block; }
+    .btn-nearby svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* Results Dropdown */
+    .results {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      max-height: 280px;
+      overflow-y: auto;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+      display: none;
+      z-index: 20;
+    }
+
+    .results.open {
+      display: block;
+    }
 
     .result-item {
       padding: 13px 16px;
@@ -102,83 +140,144 @@
       cursor: pointer;
     }
 
-    .result-item:last-child { border-bottom: none; }
-    .result-item:active { background: #1e2430; }
-    .result-item .name { font-weight: 600; font-size: 15px; }
-    .result-item .place { font-size: 13px; color: var(--muted); margin-top: 2px; }
-
-    /* Disclaimer Banner */
-    .disclaimer {
-      position: absolute;
-      top: 70px;
-      left: 16px;
-      right: 16px;
-      z-index: 900;
-      background: rgba(245, 166, 35, 0.15);
-      border: 1px solid rgba(245, 166, 35, 0.4);
-      color: #f5c542;
-      font-size: 12px;
-      padding: 8px 12px;
-      border-radius: 10px;
-      text-align: center;
-      backdrop-filter: blur(8px);
+    .result-item:last-child {
+      border-bottom: none;
     }
 
-    /* Bottom Sheet */
-    .sheet {
-      position: absolute;
-      bottom: 0; left: 0; right: 0;
-      z-index: 1000;
-      background: var(--panel);
-      border-radius: 22px 22px 0 0;
-      box-shadow: 0 -8px 40px rgba(0,0,0,0.5);
-      max-height: 48%;
-      display: flex;
-      flex-direction: column;
-      transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    .result-item:active {
+      background: var(--surface2);
     }
 
-    .sheet-handle {
-      width: 40px;
-      height: 5px;
-      background: #3a4255;
-      border-radius: 3px;
-      margin: 10px auto 6px;
+    .result-item .name {
+      font-weight: 600;
+      font-size: 15px;
     }
 
-    .sheet-header {
-      padding: 4px 20px 12px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .sheet-header h2 {
-      font-size: 18px;
-      font-weight: 700;
-    }
-
-    .sheet-header .sub {
+    .result-item .meta {
       font-size: 13px;
       color: var(--muted);
       margin-top: 2px;
     }
 
+    /* ========== BOTTOM SHEET ========== */
+    .sheet {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      background: var(--surface);
+      border-radius: 20px 20px 0 0;
+      box-shadow: 0 -10px 40px rgba(0,0,0,0.45);
+      max-height: 52%;
+      display: flex;
+      flex-direction: column;
+      transition: max-height 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+
+    .sheet.expanded {
+      max-height: 78%;
+    }
+
+    .sheet-handle {
+      width: 36px;
+      height: 4px;
+      background: #3a4358;
+      border-radius: 2px;
+      margin: 10px auto 4px;
+      flex-shrink: 0;
+    }
+
+    .sheet-header {
+      padding: 6px 18px 12px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .sheet-header h1 {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .sheet-header .sub {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 3px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--success);
+      border-radius: 50%;
+      animation: pulse 1.6s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* Filter Chips */
+    .filters {
+      display: flex;
+      gap: 8px;
+      padding: 12px 18px 4px;
+      overflow-x: auto;
+      flex-shrink: 0;
+      scrollbar-width: none;
+    }
+
+    .filters::-webkit-scrollbar {
+      display: none;
+    }
+
+    .chip {
+      flex-shrink: 0;
+      padding: 7px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .chip.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    /* Departures List */
     .deps {
       flex: 1;
       overflow-y: auto;
-      padding: 8px 0 30px;
+      padding: 6px 0 max(24px, env(safe-area-inset-bottom));
       -webkit-overflow-scrolling: touch;
     }
 
     .dep {
       display: grid;
-      grid-template-columns: 56px 1fr auto;
+      grid-template-columns: 58px 1fr auto;
       gap: 12px;
       align-items: center;
-      padding: 11px 20px;
+      padding: 12px 18px;
+      border-bottom: 1px solid rgba(42,49,66,0.6);
     }
 
-    .line {
-      width: 52px;
+    .dep:last-child {
+      border-bottom: none;
+    }
+
+    .line-badge {
+      width: 54px;
       height: 30px;
       border-radius: 8px;
       display: flex;
@@ -186,316 +285,437 @@
       justify-content: center;
       font-weight: 800;
       font-size: 13px;
-      color: white;
+      color: #fff;
+      letter-spacing: -0.3px;
     }
 
-    .line.u { background: var(--u); }
-    .line.s { background: var(--s); }
-    .line.tram { background: var(--tram); }
-    .line.bus { background: var(--bus); color: #111; }
-    .line.other { background: #4a5168; }
+    .line-badge.u { background: var(--u); }
+    .line-badge.s { background: var(--s); }
+    .line-badge.tram { background: var(--tram); }
+    .line-badge.bus { background: var(--bus); color: #111; }
+    .line-badge.other { background: #4a5368; }
 
-    .dest {
+    .dep-info {
+      min-width: 0;
+    }
+
+    .dep-dest {
       font-size: 15px;
-      font-weight: 500;
+      font-weight: 550;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    .time-col {
-      text-align: right;
-      min-width: 52px;
+    .dep-meta {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 3px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
-    .time-col .min {
+    .dep-time {
+      text-align: right;
+      min-width: 54px;
+    }
+
+    .dep-time .min {
       font-size: 16px;
       font-weight: 700;
       font-variant-numeric: tabular-nums;
     }
 
-    .time-col .live {
+    .dep-time .status {
       font-size: 11px;
-      color: #3dd68c;
       font-weight: 600;
+      margin-top: 2px;
     }
 
-    .time-col .delay {
-      font-size: 11px;
-      color: #ff6b6b;
+    .dep-time .status.live {
+      color: var(--success);
     }
 
-    .empty {
-      padding: 40px 20px;
+    .dep-time .status.delay {
+      color: var(--danger);
+    }
+
+    .empty-state {
+      padding: 48px 24px;
       text-align: center;
       color: var(--muted);
       font-size: 15px;
+      line-height: 1.5;
     }
 
-    /* Vehicle markers */
-    .vehicle-icon {
-      width: 28px;
-      height: 28px;
+    /* Station Marker */
+    .station-marker {
+      width: 16px;
+      height: 16px;
+      background: var(--accent);
+      border: 3px solid #fff;
       border-radius: 50%;
+      box-shadow: 0 0 0 5px rgba(79,140,255,0.25);
+    }
+
+    /* Loading */
+    .loading {
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 11px;
-      font-weight: 800;
-      color: white;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-      border: 2px solid rgba(255,255,255,0.3);
+      gap: 8px;
+      padding: 40px;
+      color: var(--muted);
+      font-size: 14px;
     }
 
-    .vehicle-icon.u { background: var(--u); }
-    .vehicle-icon.s { background: var(--s); }
-    .vehicle-icon.tram { background: var(--tram); }
-    .vehicle-icon.bus { background: var(--bus); color: #111; }
-
-    .station-dot {
-      width: 14px;
-      height: 14px;
-      background: var(--accent);
-      border: 3px solid white;
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
       border-radius: 50%;
-      box-shadow: 0 0 0 4px rgba(91,141,239,0.3);
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
   </style>
 </head>
 <body>
+
   <div id="map"></div>
 
+  <!-- Top Search -->
   <div class="topbar">
     <div class="topbar-inner">
-      <div class="search-wrap">
+      <div class="search-box">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.3-4.3"/>
         </svg>
-        <input id="search" type="text" placeholder="Haltestelle suchen..." autocomplete="off" />
+        <input id="search" type="text" placeholder="Haltestelle suchen…" autocomplete="off" />
         <div id="results" class="results"></div>
       </div>
+      <button class="btn-nearby" id="btn-nearby" title="In der Nähe">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2a7 7 0 0 1 7 7c0 5-7 13-7 13S5 14 5 9a7 7 0 0 1 7-7z"/>
+          <circle cx="12" cy="9" r="2.5"/>
+        </svg>
+      </button>
     </div>
   </div>
 
-  <div class="disclaimer">
-    ⚠ Fahrzeugpositionen sind geschätzt (MVG gibt keine öffentlichen Live-GPS-Daten frei)
-  </div>
-
+  <!-- Bottom Sheet -->
   <div class="sheet" id="sheet">
     <div class="sheet-handle"></div>
+
     <div class="sheet-header">
-      <h2 id="station-name">Marienplatz</h2>
-      <div class="sub" id="station-sub">Live-Abfahrten</div>
+      <h1 id="station-name">Marienplatz</h1>
+      <div class="sub">
+        <span class="live-dot"></span>
+        <span id="station-sub">Live-Abfahrten</span>
+      </div>
     </div>
+
+    <div class="filters" id="filters">
+      <button class="chip active" data-filter="all">Alle</button>
+      <button class="chip" data-filter="u">U-Bahn</button>
+      <button class="chip" data-filter="s">S-Bahn</button>
+      <button class="chip" data-filter="tram">Tram</button>
+      <button class="chip" data-filter="bus">Bus</button>
+    </div>
+
     <div class="deps" id="deps">
-      <div class="empty">Lade Abfahrten…</div>
+      <div class="loading">
+        <div class="spinner"></div>
+        Lade Abfahrten…
+      </div>
     </div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // ========== MAP ==========
-    const map = L.map('map', {
-      zoomControl: false,
-      attributionControl: false,
-      preferCanvas: true
-    }).setView([48.1372, 11.5755], 14);
-
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19
-    }).addTo(map);
-
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
-
-    let stationMarker = null;
-    let vehicleMarkers = [];
-    let currentStation = { id: 'de:09162:2', name: 'Marienplatz', lat: 48.13725, lon: 11.57542 };
+    // ==================== STATE ====================
+    let map, stationMarker;
+    let currentStation = {
+      id: "de:09162:2",
+      name: "Marienplatz",
+      lat: 48.13725,
+      lon: 11.57542
+    };
+    let allDepartures = [];
+    let currentFilter = "all";
     let refreshTimer = null;
 
-    // ========== HELPERS ==========
-    function lineClass(type, label) {
-      const t = (type || '').toUpperCase();
-      const l = (label || '').toUpperCase();
-      if (t.includes('U') || l.startsWith('U')) return 'u';
-      if (t.includes('S') || l.startsWith('S')) return 's';
-      if (t.includes('TRAM') || t === 'TRAM') return 'tram';
-      if (t.includes('BUS') || t === 'BUS') return 'bus';
-      return 'other';
+    // ==================== MAP ====================
+    function initMap() {
+      map = L.map("map", {
+        zoomControl: false,
+        attributionControl: false,
+        preferCanvas: true
+      }).setView([48.1372, 11.5755], 14);
+
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+        maxZoom: 19
+      }).addTo(map);
+
+      L.control.zoom({ position: "bottomright" }).addTo(map);
     }
 
-    // ========== SIMULATED VEHICLES ==========
-    // Da es keine öffentlichen GPS-Daten gibt, erzeugen wir realistische Schätzungen
-    function clearVehicles() {
-      vehicleMarkers.forEach(m => map.removeLayer(m));
-      vehicleMarkers = [];
+    function setStationMarker(lat, lon) {
+      if (stationMarker) map.removeLayer(stationMarker);
+
+      stationMarker = L.marker([lat, lon], {
+        icon: L.divIcon({
+          className: "",
+          html: '<div class="station-marker"></div>',
+          iconSize: [16, 16],
+          iconAnchor: [8, 8]
+        }),
+        zIndexOffset: 800
+      }).addTo(map);
     }
 
-    function spawnSimulatedVehicles(deps, stationLat, stationLon) {
-      clearVehicles();
-
-      // Nimm die nächsten 6–8 Abfahrten und setze geschätzte Positionen in der Nähe
-      const relevant = deps.slice(0, 8);
-
-      relevant.forEach((d, i) => {
-        const label = d.label || d.line || '?';
-        const type = d.transportType || d.product || '';
-        const cls = lineClass(type, label);
-
-        // Leichte zufällige Offset-Position um die Haltestelle (simuliert "unterwegs")
-        const angle = (i / relevant.length) * Math.PI * 2 + Math.random() * 0.8;
-        const dist = 0.0018 + Math.random() * 0.0035; // ca. 150–500 m
-        const lat = stationLat + Math.cos(angle) * dist;
-        const lon = stationLon + Math.sin(angle) * dist * 1.4;
-
-        const icon = L.divIcon({
-          className: '',
-          html: `<div class="vehicle-icon ${cls}">${label.substring(0, 3)}</div>`,
-          iconSize: [28, 28],
-          iconAnchor: [14, 14]
-        });
-
-        const marker = L.marker([lat, lon], { icon, zIndexOffset: 500 }).addTo(map);
-        marker.bindPopup(`<b>${label}</b><br>${d.destination || ''}<br><small>geschätzte Position</small>`);
-        vehicleMarkers.push(marker);
-
-        // Leichte Bewegung alle paar Sekunden (wirkt "live")
-        setInterval(() => {
-          if (!map.hasLayer(marker)) return;
-          const pos = marker.getLatLng();
-          const dLat = (Math.random() - 0.5) * 0.00025;
-          const dLon = (Math.random() - 0.5) * 0.00025;
-          marker.setLatLng([pos.lat + dLat, pos.lng + dLon]);
-        }, 4000 + Math.random() * 3000);
-      });
+    // ==================== HELPERS ====================
+    function getLineType(type, label) {
+      const t = (type || "").toUpperCase();
+      const l = (label || "").toUpperCase();
+      if (t.includes("UBAHN") || l.startsWith("U")) return "u";
+      if (t.includes("SBAHN") || l.startsWith("S")) return "s";
+      if (t.includes("TRAM")) return "tram";
+      if (t.includes("BUS")) return "bus";
+      return "other";
     }
 
-    // ========== API ==========
-    async function searchStations(q) {
-      const box = document.getElementById('results');
-      if (!q || q.length < 2) {
-        box.classList.remove('show');
+    function formatMinutes(ms) {
+      const min = Math.round((ms - Date.now()) / 60000);
+      if (min <= 0) return "jetzt";
+      if (min === 1) return "1 min";
+      return `${min} min`;
+    }
+
+    // ==================== API ====================
+    async function searchStations(query) {
+      const box = document.getElementById("results");
+      if (!query || query.length < 2) {
+        box.classList.remove("open");
         return;
       }
+
       try {
-        const res = await fetch(`https://www.mvg.de/api/bgw-pt/v3/locations?query=${encodeURIComponent(q)}`);
+        const res = await fetch(
+          `https://www.mvg.de/api/bgw-pt/v3/locations?query=${encodeURIComponent(query)}`
+        );
         const data = await res.json();
-        const list = (Array.isArray(data) ? data : []).filter(x => x.globalId || x.id).slice(0, 7);
+        const list = (Array.isArray(data) ? data : [])
+          .filter(x => x.globalId || x.id)
+          .slice(0, 8);
+
+        if (!list.length) {
+          box.innerHTML = `<div class="result-item"><div class="name">Keine Treffer</div></div>`;
+          box.classList.add("open");
+          return;
+        }
 
         box.innerHTML = list.map(s => `
-          <div class="result-item" data-id="${s.globalId || s.id}" data-lat="${s.latitude}" data-lon="${s.longitude}" data-name="${s.name}">
+          <div class="result-item"
+               data-id="${s.globalId || s.id}"
+               data-name="${s.name}"
+               data-lat="${s.latitude}"
+               data-lon="${s.longitude}"
+               data-place="${s.place || ""}">
             <div class="name">${s.name}</div>
-            <div class="place">${s.place || ''}</div>
+            <div class="meta">${s.place || "München"}</div>
           </div>
-        `).join('');
+        `).join("");
 
-        box.classList.add('show');
+        box.classList.add("open");
 
-        box.querySelectorAll('.result-item').forEach(el => {
-          el.onclick = () => {
+        box.querySelectorAll(".result-item").forEach(el => {
+          el.addEventListener("click", () => {
             selectStation({
               id: el.dataset.id,
               name: el.dataset.name,
               lat: parseFloat(el.dataset.lat),
-              lon: parseFloat(el.dataset.lon)
+              lon: parseFloat(el.dataset.lon),
+              place: el.dataset.place
             });
-            box.classList.remove('show');
-            document.getElementById('search').value = el.dataset.name;
-          };
+            box.classList.remove("open");
+            document.getElementById("search").value = el.dataset.name;
+          });
         });
-      } catch (e) {
-        box.innerHTML = `<div class="result-item"><div class="name">API nicht erreichbar (CORS)</div></div>`;
-        box.classList.add('show');
+      } catch (err) {
+        box.innerHTML = `<div class="result-item"><div class="name">Verbindungsfehler</div><div class="meta">CORS oder Netzwerk</div></div>`;
+        box.classList.add("open");
       }
     }
 
     async function loadDepartures(station) {
-      const depsEl = document.getElementById('deps');
-      document.getElementById('station-name').textContent = station.name;
-      document.getElementById('station-sub').textContent = 'Live-Abfahrten • aktualisiert';
+      const depsEl = document.getElementById("deps");
+      document.getElementById("station-name").textContent = station.name;
+      document.getElementById("station-sub").textContent = "Live-Abfahrten";
 
-      depsEl.innerHTML = `<div class="empty">Lade Abfahrten…</div>`;
+      depsEl.innerHTML = `
+        <div class="loading">
+          <div class="spinner"></div>
+          Lade Abfahrten…
+        </div>
+      `;
 
       try {
-        let res = await fetch(`https://www.mvg.de/api/bgw-pt/v3/departures?globalId=${encodeURIComponent(station.id)}`);
+        let res = await fetch(
+          `https://www.mvg.de/api/bgw-pt/v3/departures?globalId=${encodeURIComponent(station.id)}`
+        );
         if (!res.ok) {
-          res = await fetch(`https://www.mvg.de/api/fib/v2/departure?globalId=${encodeURIComponent(station.id)}`);
+          res = await fetch(
+            `https://www.mvg.de/api/fib/v2/departure?globalId=${encodeURIComponent(station.id)}`
+          );
         }
+
         const data = await res.json();
-        const deps = Array.isArray(data) ? data : (data.departures || []);
+        allDepartures = Array.isArray(data) ? data : (data.departures || []);
 
-        if (!deps.length) {
-          depsEl.innerHTML = `<div class="empty">Keine Abfahrten gefunden</div>`;
-          clearVehicles();
-          return;
-        }
-
-        const now = Date.now();
-        let html = '';
-
-        deps.slice(0, 16).forEach(d => {
-          const label = d.label || d.line || '?';
-          const dest = d.destination || d.direction || '–';
-          const type = d.transportType || d.product || '';
-          const rt = d.realtimeDepartureTime || d.departureTime || now;
-          const delay = d.delayInMinutes || 0;
-          let min = Math.round((rt - now) / 60000);
-          if (min < 0) min = 0;
-
-          html += `
-            <div class="dep">
-              <div class="line ${lineClass(type, label)}">${label}</div>
-              <div class="dest">${dest}</div>
-              <div class="time-col">
-                <div class="min">${min === 0 ? 'jetzt' : min + ' min'}</div>
-                ${d.realtime ? '<div class="live">LIVE</div>' : ''}
-                ${delay > 0 ? `<div class="delay">+${delay}</div>` : ''}
-              </div>
-            </div>
-          `;
-        });
-
-        depsEl.innerHTML = html;
-
-        // Simulierte Fahrzeuge spawnen
-        spawnSimulatedVehicles(deps, station.lat, station.lon);
-
+        renderDepartures();
       } catch (err) {
         console.error(err);
-        depsEl.innerHTML = `<div class="empty">Abfahrten konnten nicht geladen werden<br><small>CORS oder API-Änderung</small></div>`;
+        depsEl.innerHTML = `
+          <div class="empty-state">
+            Abfahrten konnten nicht geladen werden.<br>
+            <small style="opacity:0.7">API nicht erreichbar (CORS)</small>
+          </div>
+        `;
       }
     }
 
+    function renderDepartures() {
+      const depsEl = document.getElementById("deps");
+      let list = allDepartures;
+
+      if (currentFilter !== "all") {
+        list = list.filter(d => {
+          const type = getLineType(d.transportType || d.product, d.label || d.line);
+          return type === currentFilter;
+        });
+      }
+
+      if (!list.length) {
+        depsEl.innerHTML = `<div class="empty-state">Keine Abfahrten für diesen Filter</div>`;
+        return;
+      }
+
+      const now = Date.now();
+      let html = "";
+
+      list.slice(0, 20).forEach(d => {
+        const label = d.label || d.line || "?";
+        const dest = d.destination || d.direction || "–";
+        const type = getLineType(d.transportType || d.product, label);
+        const rt = d.realtimeDepartureTime || d.departureTime || now;
+        const delay = d.delayInMinutes || 0;
+        const platform = d.platform || d.platformChanged ? (d.platform || "") : "";
+        const isLive = !!d.realtime;
+
+        let statusHtml = "";
+        if (delay > 0) {
+          statusHtml = `<div class="status delay">+${delay} min</div>`;
+        } else if (isLive) {
+          statusHtml = `<div class="status live">LIVE</div>`;
+        }
+
+        html += `
+          <div class="dep">
+            <div class="line-badge ${type}">${label}</div>
+            <div class="dep-info">
+              <div class="dep-dest">${dest}</div>
+              <div class="dep-meta">
+                ${platform ? `<span>Gl. ${platform}</span>` : ""}
+                ${d.cancelled ? `<span style="color:var(--danger)">entfällt</span>` : ""}
+              </div>
+            </div>
+            <div class="dep-time">
+              <div class="min">${formatMinutes(rt)}</div>
+              ${statusHtml}
+            </div>
+          </div>
+        `;
+      });
+
+      depsEl.innerHTML = html;
+    }
+
+    // ==================== STATION SELECT ====================
     function selectStation(station) {
       currentStation = station;
-
-      if (stationMarker) map.removeLayer(stationMarker);
-
-      stationMarker = L.marker([station.lat, station.lon], {
-        icon: L.divIcon({
-          className: '',
-          html: '<div class="station-dot"></div>',
-          iconSize: [14, 14],
-          iconAnchor: [7, 7]
-        }),
-        zIndexOffset: 600
-      }).addTo(map);
-
-      map.flyTo([station.lat, station.lon], 15.5, { duration: 0.9 });
+      setStationMarker(station.lat, station.lon);
+      map.flyTo([station.lat, station.lon], 15.5, { duration: 0.85 });
 
       loadDepartures(station);
 
       if (refreshTimer) clearInterval(refreshTimer);
-      refreshTimer = setInterval(() => loadDepartures(station), 35000);
+      refreshTimer = setInterval(() => loadDepartures(station), 30000);
     }
 
-    // Search
-    let t;
-    document.getElementById('search').addEventListener('input', e => {
-      clearTimeout(t);
-      t = setTimeout(() => searchStations(e.target.value.trim()), 260);
+    // ==================== NEARBY ====================
+    function findNearby() {
+      if (!navigator.geolocation) {
+        alert("Standort nicht verfügbar");
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const { latitude, longitude } = pos.coords;
+          map.flyTo([latitude, longitude], 15);
+
+          try {
+            // Nearby über die Locations-API versuchen
+            const res = await fetch(
+              `https://www.mvg.de/api/bgw-pt/v3/locations?latitude=${latitude}&longitude=${longitude}`
+            );
+            // Fallback: einfache Suche mit Koordinaten ist nicht immer verfügbar,
+            // deshalb zeigen wir erstmal die Karte an der Position
+          } catch (e) {
+            console.log("Nearby API nicht verfügbar");
+          }
+        },
+        () => alert("Standort konnte nicht ermittelt werden")
+      );
+    }
+
+    // ==================== EVENTS ====================
+    let searchTimeout;
+    document.getElementById("search").addEventListener("input", (e) => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        searchStations(e.target.value.trim());
+      }, 250);
     });
 
-    // Start
+    document.getElementById("btn-nearby").addEventListener("click", findNearby);
+
+    // Filter chips
+    document.getElementById("filters").addEventListener("click", (e) => {
+      const chip = e.target.closest(".chip");
+      if (!chip) return;
+
+      document.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+      chip.classList.add("active");
+      currentFilter = chip.dataset.filter;
+      renderDepartures();
+    });
+
+    // Close results when clicking outside
+    document.addEventListener("click", (e) => {
+      if (!e.target.closest(".search-box")) {
+        document.getElementById("results").classList.remove("open");
+      }
+    });
+
+    // ==================== INIT ====================
+    initMap();
     selectStation(currentStation);
   </script>
 </body>
