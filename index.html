@@ -1,4 +1,4 @@
-<html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
@@ -7,19 +7,19 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     :root {
-      --bg: #0a0c11;
-      --surface: #13171f;
-      --surface2: #1a1f2b;
-      --border: #2a3142;
-      --text: #f0f2f7;
-      --muted: #8a93a8;
+      --bg: #090b10;
+      --surface: #12151c;
+      --surface2: #1a1e28;
+      --border: #2a3040;
+      --text: #f1f3f8;
+      --muted: #8b93a7;
       --accent: #4f8cff;
       --u: #0065b0;
       --s: #008c4f;
       --tram: #e30613;
       --bus: #f5a623;
-      --success: #3dd68c;
-      --danger: #ff5c5c;
+      --success: #34d399;
+      --danger: #f87171;
       --radius: 16px;
     }
 
@@ -38,21 +38,20 @@
       overflow: hidden;
     }
 
-    /* ========== LAYOUT ========== */
     #app {
       display: grid;
-      grid-template-columns: 400px 1fr;
+      grid-template-columns: 420px 1fr;
       height: 100dvh;
     }
 
-    @media (max-width: 860px) {
+    @media (max-width: 900px) {
       #app {
         grid-template-columns: 1fr;
         grid-template-rows: 1fr auto;
       }
     }
 
-    /* ========== SIDEBAR / SHEET ========== */
+    /* ========== PANEL ========== */
     .panel {
       background: var(--surface);
       display: flex;
@@ -60,14 +59,15 @@
       border-right: 1px solid var(--border);
       z-index: 1000;
       max-height: 100dvh;
+      overflow: hidden;
     }
 
-    @media (max-width: 860px) {
+    @media (max-width: 900px) {
       .panel {
         border-right: none;
-        border-radius: 20px 20px 0 0;
-        max-height: 52dvh;
-        box-shadow: 0 -8px 40px rgba(0,0,0,0.5);
+        border-radius: 22px 22px 0 0;
+        max-height: 50dvh;
+        box-shadow: 0 -12px 40px rgba(0,0,0,0.55);
         order: 2;
       }
       .panel.expanded {
@@ -76,34 +76,35 @@
     }
 
     .panel-header {
-      padding: 16px 18px 12px;
+      padding: 18px 18px 14px;
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
     }
 
-    @media (max-width: 860px) {
+    @media (max-width: 900px) {
       .panel-header {
-        padding-top: 8px;
+        padding-top: 10px;
       }
       .handle {
-        width: 36px;
+        width: 38px;
         height: 4px;
-        background: #3a4358;
+        background: #3a4255;
         border-radius: 2px;
-        margin: 0 auto 10px;
+        margin: 0 auto 12px;
       }
     }
 
     .panel-title {
-      font-size: 18px;
+      font-size: 19px;
       font-weight: 700;
-      letter-spacing: -0.3px;
+      letter-spacing: -0.4px;
+      line-height: 1.25;
     }
 
     .panel-sub {
       font-size: 13px;
       color: var(--muted);
-      margin-top: 4px;
+      margin-top: 5px;
       display: flex;
       align-items: center;
       gap: 7px;
@@ -114,12 +115,12 @@
       height: 7px;
       background: var(--success);
       border-radius: 50%;
-      animation: pulse 1.6s infinite;
+      animation: pulse 1.7s infinite;
     }
 
     @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.35; }
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
     }
 
     /* Search */
@@ -134,10 +135,11 @@
       padding: 0 14px 0 42px;
       background: var(--surface2);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 13px;
       color: var(--text);
       font-size: 15px;
       outline: none;
+      transition: border-color 0.15s;
     }
 
     .search-wrap input:focus {
@@ -157,17 +159,17 @@
 
     .results {
       position: absolute;
-      top: calc(100% + 6px);
+      top: calc(100% + 7px);
       left: 0;
       right: 0;
       background: var(--surface2);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      max-height: 260px;
+      border-radius: 13px;
+      max-height: 280px;
       overflow-y: auto;
       display: none;
-      z-index: 50;
-      box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+      z-index: 60;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.45);
     }
 
     .results.open { display: block; }
@@ -179,17 +181,17 @@
     }
 
     .result-item:last-child { border-bottom: none; }
-    .result-item:active,
-    .result-item:hover { background: #222836; }
+    .result-item:hover,
+    .result-item:active { background: #222836; }
 
-    .result-item .name { font-weight: 600; font-size: 14px; }
-    .result-item .meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .result-item .name { font-weight: 600; font-size: 14.5px; }
+    .result-item .meta { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
 
     /* Filters */
     .filters {
       display: flex;
       gap: 7px;
-      padding: 12px 18px 6px;
+      padding: 12px 18px 8px;
       overflow-x: auto;
       flex-shrink: 0;
       scrollbar-width: none;
@@ -199,7 +201,7 @@
 
     .chip {
       flex-shrink: 0;
-      padding: 7px 13px;
+      padding: 7px 14px;
       border-radius: 20px;
       font-size: 13px;
       font-weight: 600;
@@ -220,7 +222,7 @@
     .deps {
       flex: 1;
       overflow-y: auto;
-      padding-bottom: max(20px, env(safe-area-inset-bottom));
+      padding-bottom: max(22px, env(safe-area-inset-bottom));
       -webkit-overflow-scrolling: touch;
     }
 
@@ -229,11 +231,13 @@
       grid-template-columns: 56px 1fr auto;
       gap: 12px;
       align-items: center;
-      padding: 12px 18px;
-      border-bottom: 1px solid rgba(42,49,66,0.55);
+      padding: 13px 18px;
+      border-bottom: 1px solid rgba(42,48,64,0.55);
+      transition: background 0.12s;
     }
 
     .dep:last-child { border-bottom: none; }
+    .dep:active { background: rgba(255,255,255,0.03); }
 
     .line-badge {
       width: 52px;
@@ -243,8 +247,9 @@
       align-items: center;
       justify-content: center;
       font-weight: 800;
-      font-size: 13px;
+      font-size: 12.5px;
       color: #fff;
+      letter-spacing: -0.2px;
     }
 
     .line-badge.u { background: var(--u); }
@@ -256,7 +261,7 @@
     .dep-info { min-width: 0; }
     .dep-dest {
       font-size: 14.5px;
-      font-weight: 550;
+      font-weight: 560;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -273,7 +278,7 @@
 
     .dep-time {
       text-align: right;
-      min-width: 52px;
+      min-width: 54px;
     }
 
     .dep-time .min {
@@ -292,11 +297,11 @@
     .status.delay { color: var(--danger); }
 
     .empty, .loading {
-      padding: 40px 20px;
+      padding: 48px 24px;
       text-align: center;
       color: var(--muted);
-      font-size: 14px;
-      line-height: 1.5;
+      font-size: 14.5px;
+      line-height: 1.55;
     }
 
     .loading {
@@ -323,15 +328,9 @@
       height: 100%;
       z-index: 1;
       order: 1;
+      background: #0d1118;
     }
 
-    @media (max-width: 860px) {
-      #map {
-        height: 100%;
-      }
-    }
-
-    /* Map floating controls */
     .map-controls {
       position: absolute;
       top: max(14px, env(safe-area-inset-top));
@@ -339,28 +338,26 @@
       z-index: 900;
       display: flex;
       flex-direction: column;
-      gap: 8px;
-    }
-
-    @media (min-width: 861px) {
-      .map-controls {
-        top: 18px;
-        right: 18px;
-      }
+      gap: 9px;
     }
 
     .map-btn {
-      width: 44px;
-      height: 44px;
+      width: 46px;
+      height: 46px;
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 13px;
       display: flex;
       align-items: center;
       justify-content: center;
       color: var(--text);
-      box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+      box-shadow: 0 4px 18px rgba(0,0,0,0.4);
       cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .map-btn:active {
+      background: var(--surface2);
     }
 
     .map-btn svg {
@@ -368,18 +365,23 @@
       height: 20px;
     }
 
-    .map-btn:active {
-      background: var(--surface2);
-    }
-
     /* Markers */
     .station-marker {
-      width: 16px;
-      height: 16px;
+      width: 14px;
+      height: 14px;
       background: var(--accent);
-      border: 3px solid #fff;
+      border: 2.5px solid #fff;
       border-radius: 50%;
-      box-shadow: 0 0 0 5px rgba(79,140,255,0.28);
+      box-shadow: 0 0 0 4px rgba(79,140,255,0.25);
+      cursor: pointer;
+    }
+
+    .station-marker.active {
+      width: 18px;
+      height: 18px;
+      background: #fff;
+      border: 3px solid var(--accent);
+      box-shadow: 0 0 0 6px rgba(79,140,255,0.35);
     }
 
     .user-marker {
@@ -388,15 +390,29 @@
       background: #4f8cff;
       border: 3px solid #fff;
       border-radius: 50%;
-      box-shadow: 0 0 0 6px rgba(79,140,255,0.3);
+      box-shadow: 0 0 0 7px rgba(79,140,255,0.28);
     }
 
-    /* Desktop search in panel only, mobile also works */
+    .leaflet-popup-content-wrapper {
+      background: var(--surface2);
+      color: var(--text);
+      border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    }
+
+    .leaflet-popup-tip {
+      background: var(--surface2);
+    }
+
+    .leaflet-popup-content {
+      margin: 10px 12px;
+      font-size: 13.5px;
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
   <div id="app">
-    <!-- Panel -->
     <aside class="panel" id="panel">
       <div class="panel-header">
         <div class="handle"></div>
@@ -431,10 +447,8 @@
       </div>
     </aside>
 
-    <!-- Map -->
     <div id="map"></div>
 
-    <!-- Map floating buttons -->
     <div class="map-controls">
       <button class="map-btn" id="btn-locate" title="Mein Standort">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -448,7 +462,8 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     // ==================== STATE ====================
-    let map, stationMarker, userMarker;
+    let map, userMarker, activeStationMarker;
+    let stationMarkers = [];
     let currentStation = null;
     let allDepartures = [];
     let currentFilter = "all";
@@ -462,13 +477,40 @@
         zoomControl: false,
         attributionControl: false,
         preferCanvas: true
-      }).setView([51.16, 10.45], 6); // grob Deutschland als Start
+      }).setView([51.16, 10.45], 6);
 
       L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
         maxZoom: 19
       }).addTo(map);
 
       L.control.zoom({ position: "bottomright" }).addTo(map);
+    }
+
+    function clearStationMarkers() {
+      stationMarkers.forEach(m => map.removeLayer(m));
+      stationMarkers = [];
+      activeStationMarker = null;
+    }
+
+    function addStationMarker(station, isActive = false) {
+      const icon = L.divIcon({
+        className: "",
+        html: `<div class="station-marker ${isActive ? "active" : ""}"></div>`,
+        iconSize: isActive ? [18, 18] : [14, 14],
+        iconAnchor: isActive ? [9, 9] : [7, 7]
+      });
+
+      const marker = L.marker([station.lat, station.lon], {
+        icon,
+        zIndexOffset: isActive ? 850 : 600
+      }).addTo(map);
+
+      marker.bindPopup(`<b>${station.name}</b>${station.place ? "<br>" + station.place : ""}`);
+      marker.on("click", () => selectStation(station));
+
+      stationMarkers.push(marker);
+      if (isActive) activeStationMarker = marker;
+      return marker;
     }
 
     function setUserMarker(lat, lon) {
@@ -480,20 +522,7 @@
           iconSize: [18, 18],
           iconAnchor: [9, 9]
         }),
-        zIndexOffset: 900
-      }).addTo(map);
-    }
-
-    function setStationMarker(lat, lon) {
-      if (stationMarker) map.removeLayer(stationMarker);
-      stationMarker = L.marker([lat, lon], {
-        icon: L.divIcon({
-          className: "",
-          html: '<div class="station-marker"></div>',
-          iconSize: [16, 16],
-          iconAnchor: [8, 8]
-        }),
-        zIndexOffset: 800
+        zIndexOffset: 1000
       }).addTo(map);
     }
 
@@ -512,6 +541,16 @@
       const min = Math.round((ms - Date.now()) / 60000);
       if (min <= 0) return "jetzt";
       return min + " min";
+    }
+
+    function distance(lat1, lon1, lat2, lon2) {
+      const R = 6371e3;
+      const φ1 = lat1 * Math.PI / 180;
+      const φ2 = lat2 * Math.PI / 180;
+      const Δφ = (lat2 - lat1) * Math.PI / 180;
+      const Δλ = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(Δφ/2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
     // ==================== API ====================
@@ -565,15 +604,65 @@
           };
         });
       } catch (err) {
-        box.innerHTML = `<div class="result-item"><div class="name">Fehler bei der Suche</div><div class="meta">Netzwerk / CORS</div></div>`;
+        box.innerHTML = `<div class="result-item"><div class="name">Suchfehler</div><div class="meta">Netzwerk / CORS</div></div>`;
         box.classList.add("open");
+      }
+    }
+
+    async function findNearbyStations(lat, lon) {
+      // Da die MVG-API kein sauberes Nearby-by-coords hat, nutzen wir eine
+      // praktische Näherung: bekannte große Stationen + Suche über den User-Standort.
+      // Für den Start laden wir ein paar zentrale Treffer und sortieren nach Distanz.
+      try {
+        // Wir nutzen eine generische Suche und filtern später nach Nähe.
+        // Besserer Ansatz: mehrere Suchen oder bekannte Stationen.
+        // Hier: wir versuchen erstmal "Bahnhof" + "Zentrum" und nehmen die nächsten.
+        const queries = ["Bahnhof", "Zentrum", "Marienplatz", "Hauptbahnhof"];
+        let candidates = [];
+
+        for (const q of queries) {
+          const res = await fetch(
+            `https://www.mvg.de/api/bgw-pt/v3/locations?query=${encodeURIComponent(q)}`
+          );
+          const data = await res.json();
+          const list = (Array.isArray(data) ? data : []).filter(x => x.latitude && x.longitude);
+          candidates = candidates.concat(list);
+        }
+
+        // Duplikate entfernen
+        const seen = new Set();
+        candidates = candidates.filter(s => {
+          const id = s.globalId || s.id;
+          if (seen.has(id)) return false;
+          seen.add(id);
+          return true;
+        });
+
+        // Nach Distanz sortieren
+        candidates = candidates
+          .map(s => ({
+            id: s.globalId || s.id,
+            name: s.name,
+            lat: s.latitude,
+            lon: s.longitude,
+            place: s.place || "",
+            dist: distance(lat, lon, s.latitude, s.longitude)
+          }))
+          .sort((a, b) => a.dist - b.dist)
+          .slice(0, 12);
+
+        return candidates;
+      } catch (e) {
+        console.warn("Nearby failed", e);
+        return [];
       }
     }
 
     async function loadDepartures(station) {
       const depsEl = document.getElementById("deps");
       document.getElementById("station-name").textContent = station.name;
-      document.getElementById("station-sub").textContent = station.place ? station.place + " · Live" : "Live-Abfahrten";
+      document.getElementById("station-sub").textContent =
+        (station.place ? station.place + " · " : "") + "Live-Abfahrten";
 
       depsEl.innerHTML = `
         <div class="loading">
@@ -625,7 +714,7 @@
       const now = Date.now();
       let html = "";
 
-      list.slice(0, 25).forEach(d => {
+      list.slice(0, 30).forEach(d => {
         const label = d.label || d.line || "?";
         const dest = d.destination || d.direction || "–";
         const type = getLineType(d.transportType || d.product, label);
@@ -659,12 +748,15 @@
       depsEl.innerHTML = html;
     }
 
-    // ==================== STATION ====================
+    // ==================== STATION SELECT ====================
     function selectStation(station) {
       currentStation = station;
-      setStationMarker(station.lat, station.lon);
-      map.flyTo([station.lat, station.lon], 15.5, { duration: 0.9 });
 
+      // Marker neu setzen
+      clearStationMarkers();
+      addStationMarker(station, true);
+
+      map.flyTo([station.lat, station.lon], 15.5, { duration: 0.85 });
       loadDepartures(station);
 
       if (refreshTimer) clearInterval(refreshTimer);
@@ -672,10 +764,13 @@
     }
 
     // ==================== GEOLOCATION ====================
-    function locateUser(showError = true) {
+    async function locateUser(force = false) {
       if (!navigator.geolocation) {
-        if (showError) alert("Standort wird von diesem Gerät nicht unterstützt.");
-        fallbackMunich();
+        document.getElementById("station-name").textContent = "Standort nicht verfügbar";
+        document.getElementById("station-sub").textContent = "Bitte Haltestelle suchen";
+        document.getElementById("deps").innerHTML = `
+          <div class="empty">Standortzugriff wird nicht unterstützt.<br>Suche eine Haltestelle.</div>
+        `;
         return;
       }
 
@@ -693,60 +788,48 @@
           setUserMarker(userLat, userLon);
           map.setView([userLat, userLon], 14);
 
-          // Versuche nahe Haltestelle über die MVG-API zu finden
-          try {
-            // Die Locations-API akzeptiert manchmal Koordinaten nicht direkt.
-            // Deshalb nutzen wir eine einfache Suche + nächste Station manuell.
-            // Für den Start: wir setzen den View und lassen den User suchen
-            // oder wir versuchen eine generische Nearby-Abfrage.
+          // Nahe Haltestellen suchen und auf Karte anzeigen
+          const nearby = await findNearbyStations(userLat, userLon);
 
-            // Fallback: Zeige Standort und warte auf Auswahl
+          clearStationMarkers();
+          nearby.forEach((s, i) => {
+            addStationMarker(s, i === 0);
+          });
+
+          if (nearby.length > 0) {
+            // Nächste Station automatisch auswählen
+            selectStation(nearby[0]);
+          } else {
             document.getElementById("station-name").textContent = "Dein Standort";
-            document.getElementById("station-sub").textContent = "Haltestelle suchen oder tippen";
+            document.getElementById("station-sub").textContent = "Keine Haltestellen in der Nähe gefunden";
             document.getElementById("deps").innerHTML = `
               <div class="empty">
                 Standort gefunden.<br>
-                Suche eine Haltestelle oder nutze die Suche oben.
+                Suche manuell nach einer Haltestelle.
               </div>
             `;
-          } catch (e) {
-            console.log(e);
           }
         },
         (err) => {
           console.warn(err);
-          if (showError) {
-            document.getElementById("station-name").textContent = "Standort nicht verfügbar";
-            document.getElementById("station-sub").textContent = "Suche eine Haltestelle";
-            document.getElementById("deps").innerHTML = `
-              <div class="empty">
-                Standort konnte nicht ermittelt werden.<br>
-                Bitte erlaube den Standortzugriff oder suche manuell.
-              </div>
-            `;
-          }
-          // grober Deutschland-View bleibt
+          document.getElementById("station-name").textContent = "Standort blockiert";
+          document.getElementById("station-sub").textContent = "Bitte Zugriff erlauben oder suchen";
+          document.getElementById("deps").innerHTML = `
+            <div class="empty">
+              Standort konnte nicht ermittelt werden.<br>
+              Erlaube den Zugriff oder suche eine Haltestelle.
+            </div>
+          `;
         },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+        { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 }
       );
-    }
-
-    function fallbackMunich() {
-      // nur als allerletzter Fallback
-      selectStation({
-        id: "de:09162:2",
-        name: "Marienplatz",
-        lat: 48.13725,
-        lon: 11.57542,
-        place: "München"
-      });
     }
 
     // ==================== EVENTS ====================
     let searchTimeout;
     document.getElementById("search").addEventListener("input", (e) => {
       clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(() => searchStations(e.target.value.trim()), 240);
+      searchTimeout = setTimeout(() => searchStations(e.target.value.trim()), 230);
     });
 
     document.getElementById("btn-locate").addEventListener("click", () => locateUser(true));
@@ -768,7 +851,7 @@
 
     // ==================== START ====================
     initMap();
-    locateUser(false);
+    locateUser();
   </script>
 </body>
 </html>
