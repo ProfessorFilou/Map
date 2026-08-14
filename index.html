@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>ÖPNV Live</title>
+  <title>ÖPNV</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     :root {
-      --bg: #0b0d13;
-      --panel: #12151d;
-      --card: #1a1e28;
-      --border: #2a3142;
-      --text: #f1f3f8;
-      --muted: #8b93a7;
-      --accent: #4f8cff;
+      --bg: #0a0b10;
+      --panel: #11141b;
+      --card: #181c26;
+      --border: #2a3040;
+      --text: #f0f2f7;
+      --muted: #8a93a6;
+      --accent: #5b8def;
       --u: #0065b0;
       --s: #008c4f;
       --tram: #e30613;
@@ -34,88 +34,70 @@
 
     #app {
       display: grid;
-      grid-template-columns: 420px 1fr;
+      grid-template-columns: 400px 1fr;
       height: 100dvh;
     }
 
-    @media (max-width: 900px) {
+    @media (max-width: 880px) {
       #app {
         grid-template-columns: 1fr;
         grid-template-rows: 1fr auto;
       }
     }
 
-    /* PANEL */
     .panel {
       background: var(--panel);
       display: flex;
       flex-direction: column;
       border-right: 1px solid var(--border);
-      z-index: 1000;
+      z-index: 20;
       max-height: 100dvh;
-      overflow: hidden;
     }
 
-    @media (max-width: 900px) {
+    @media (max-width: 880px) {
       .panel {
         border-right: none;
-        border-radius: 22px 22px 0 0;
-        max-height: 48dvh;
-        box-shadow: 0 -12px 40px rgba(0,0,0,.5);
+        border-radius: 20px 20px 0 0;
+        max-height: 46dvh;
+        box-shadow: 0 -10px 40px rgba(0,0,0,.5);
         order: 2;
       }
     }
 
-    .panel-top {
+    .top {
       padding: 16px 16px 12px;
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
     }
 
-    @media (max-width: 900px) {
+    @media (max-width: 880px) {
       .handle {
-        width: 40px;
+        width: 36px;
         height: 4px;
-        background: #3a4358;
+        background: #3a4356;
         border-radius: 2px;
         margin: 0 auto 12px;
       }
     }
 
     .title {
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 700;
       letter-spacing: -0.3px;
     }
 
-    .subtitle {
+    .sub {
       font-size: 13px;
       color: var(--muted);
-      margin-top: 4px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      margin-top: 3px;
     }
 
-    .dot {
-      width: 7px;
-      height: 7px;
-      background: var(--green);
-      border-radius: 50%;
-      animation: pulse 1.6s infinite;
-    }
-
-    @keyframes pulse {
-      0%,100% { opacity: 1; }
-      50% { opacity: .35; }
-    }
-
-    .search {
+    .search-box {
       margin-top: 12px;
       position: relative;
     }
 
-    .search input {
+    .search-box input {
       width: 100%;
       height: 44px;
       padding: 0 12px 0 40px;
@@ -127,9 +109,11 @@
       outline: none;
     }
 
-    .search input:focus { border-color: var(--accent); }
+    .search-box input:focus {
+      border-color: var(--accent);
+    }
 
-    .search svg {
+    .search-box svg {
       position: absolute;
       left: 12px;
       top: 50%;
@@ -143,18 +127,19 @@
     .results {
       position: absolute;
       top: calc(100% + 6px);
-      left: 0; right: 0;
+      left: 0;
+      right: 0;
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 12px;
-      max-height: 280px;
+      max-height: 260px;
       overflow-y: auto;
       display: none;
-      z-index: 50;
-      box-shadow: 0 12px 32px rgba(0,0,0,.4);
+      z-index: 30;
+      box-shadow: 0 12px 30px rgba(0,0,0,.4);
     }
 
-    .results.open { display: block; }
+    .results.show { display: block; }
 
     .result {
       padding: 11px 14px;
@@ -165,12 +150,12 @@
     .result:last-child { border-bottom: none; }
     .result:hover, .result:active { background: #222836; }
     .result .name { font-weight: 600; font-size: 14px; }
-    .result .meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .result .place { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
     .filters {
       display: flex;
       gap: 6px;
-      padding: 10px 16px 6px;
+      padding: 10px 16px;
       overflow-x: auto;
       flex-shrink: 0;
       scrollbar-width: none;
@@ -190,31 +175,28 @@
       cursor: pointer;
     }
 
-    .chip.active {
+    .chip.on {
       background: var(--accent);
       border-color: var(--accent);
       color: #fff;
     }
 
-    .list {
+    .deps {
       flex: 1;
       overflow-y: auto;
-      padding-bottom: max(20px, env(safe-area-inset-bottom));
+      padding-bottom: max(18px, env(safe-area-inset-bottom));
     }
 
     .dep {
       display: grid;
-      grid-template-columns: 52px 1fr auto;
-      gap: 11px;
+      grid-template-columns: 50px 1fr auto;
+      gap: 10px;
       align-items: center;
-      padding: 12px 16px;
-      border-bottom: 1px solid rgba(42,49,66,.5);
+      padding: 11px 16px;
+      border-bottom: 1px solid rgba(42,48,64,.45);
     }
 
-    .dep:last-child { border-bottom: none; }
-
     .badge {
-      width: 50px;
       height: 26px;
       border-radius: 6px;
       display: flex;
@@ -229,9 +211,8 @@
     .badge.s { background: var(--s); }
     .badge.tram { background: var(--tram); }
     .badge.bus { background: var(--bus); color: #111; }
-    .badge.other { background: #4a5368; }
+    .badge.x { background: #4a5368; }
 
-    .info { min-width: 0; }
     .dest {
       font-size: 14px;
       font-weight: 550;
@@ -244,296 +225,183 @@
       font-size: 12px;
       color: var(--muted);
       margin-top: 2px;
-      display: flex;
-      gap: 8px;
     }
 
     .time {
       text-align: right;
-      min-width: 50px;
-    }
-
-    .time .min {
-      font-size: 14.5px;
+      font-size: 14px;
       font-weight: 700;
       font-variant-numeric: tabular-nums;
+      min-width: 48px;
     }
 
-    .time .status {
+    .time small {
+      display: block;
       font-size: 11px;
       font-weight: 600;
       margin-top: 1px;
     }
 
-    .status.live { color: var(--green); }
-    .status.delay { color: var(--red); }
+    .live { color: var(--green); }
+    .delay { color: var(--red); }
 
-    .empty, .loading {
-      padding: 40px 20px;
+    .empty {
+      padding: 36px 20px;
       text-align: center;
       color: var(--muted);
       font-size: 14px;
       line-height: 1.5;
     }
 
-    .loading {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-    }
-
-    .spinner {
-      width: 16px;
-      height: 16px;
-      border: 2px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin .7s linear infinite;
-    }
-
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* MAP */
     #map {
       width: 100%;
       height: 100%;
       order: 1;
-      background: #0d1118;
-    }
-
-    .map-btns {
-      position: absolute;
-      top: max(12px, env(safe-area-inset-top));
-      right: 12px;
-      z-index: 900;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+      background: #0c0f16;
     }
 
     .map-btn {
-      width: 44px;
-      height: 44px;
+      position: absolute;
+      top: max(12px, env(safe-area-inset-top));
+      right: 12px;
+      z-index: 15;
+      width: 42px;
+      height: 42px;
       background: var(--panel);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 11px;
       display: flex;
       align-items: center;
       justify-content: center;
       color: var(--text);
-      box-shadow: 0 4px 16px rgba(0,0,0,.35);
+      box-shadow: 0 4px 14px rgba(0,0,0,.35);
       cursor: pointer;
     }
 
-    .map-btn:active { background: var(--card); }
     .map-btn svg { width: 18px; height: 18px; }
 
-    .station-dot {
-      width: 12px;
-      height: 12px;
-      background: var(--accent);
-      border: 2px solid #fff;
-      border-radius: 50%;
-      box-shadow: 0 0 0 3px rgba(79,140,255,.2);
-      cursor: pointer;
-    }
-
-    .station-dot.active {
+    .user {
       width: 16px;
       height: 16px;
-      background: #fff;
-      border: 3px solid var(--accent);
-      box-shadow: 0 0 0 5px rgba(79,140,255,.3);
-    }
-
-    .user-dot {
-      width: 16px;
-      height: 16px;
-      background: #4f8cff;
+      background: #5b8def;
       border: 3px solid #fff;
       border-radius: 50%;
-      box-shadow: 0 0 0 6px rgba(79,140,255,.25);
+      box-shadow: 0 0 0 6px rgba(91,141,239,.25);
     }
 
-    .leaflet-popup-content-wrapper {
-      background: var(--card);
-      color: var(--text);
-      border-radius: 10px;
-      box-shadow: 0 8px 24px rgba(0,0,0,.4);
-    }
-
-    .leaflet-popup-tip { background: var(--card); }
-    .leaflet-popup-content {
-      margin: 9px 11px;
-      font-size: 13px;
-      font-weight: 600;
+    .stop {
+      width: 14px;
+      height: 14px;
+      background: var(--accent);
+      border: 2.5px solid #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 0 4px rgba(91,141,239,.2);
     }
   </style>
 </head>
 <body>
   <div id="app">
     <aside class="panel">
-      <div class="panel-top">
+      <div class="top">
         <div class="handle"></div>
-        <div class="title" id="title">Standort wird ermittelt…</div>
-        <div class="subtitle">
-          <span class="dot"></span>
-          <span id="subtitle">Bitte warten</span>
-        </div>
+        <div class="title" id="title">Haltestelle suchen</div>
+        <div class="sub" id="sub">Suche starten oder Standort nutzen</div>
 
-        <div class="search">
+        <div class="search-box">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
           </svg>
-          <input id="search" type="text" placeholder="Haltestelle suchen…" autocomplete="off" />
+          <input id="q" type="text" placeholder="Haltestelle eingeben…" autocomplete="off" />
           <div id="results" class="results"></div>
         </div>
       </div>
 
       <div class="filters" id="filters">
-        <button class="chip active" data-f="all">Alle</button>
+        <button class="chip on" data-f="all">Alle</button>
         <button class="chip" data-f="u">U-Bahn</button>
         <button class="chip" data-f="s">S-Bahn</button>
         <button class="chip" data-f="tram">Tram</button>
         <button class="chip" data-f="bus">Bus</button>
       </div>
 
-      <div class="list" id="list">
-        <div class="loading"><div class="spinner"></div>Standort wird geladen…</div>
+      <div class="deps" id="deps">
+        <div class="empty">
+          Suche eine Haltestelle<br>
+          oder tippe auf den Standort-Button
+        </div>
       </div>
     </aside>
 
     <div id="map"></div>
-
-    <div class="map-btns">
-      <button class="map-btn" id="locate" title="Mein Standort">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
-        </svg>
-      </button>
-    </div>
+    <button class="map-btn" id="loc" title="Standort">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+      </svg>
+    </button>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    let map, userMarker;
-    let markers = [];
+    const map = L.map("map", {
+      zoomControl: false,
+      attributionControl: false
+    }).setView([48.137, 11.575], 12);
+
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+      maxZoom: 19
+    }).addTo(map);
+
+    L.control.zoom({ position: "bottomright" }).addTo(map);
+
+    let userMarker = null;
+    let stopMarker = null;
     let current = null;
-    let deps = [];
+    let allDeps = [];
     let filter = "all";
-    let timer = null;
-    let lat = null, lon = null;
+    let refresh = null;
 
-    function init() {
-      map = L.map("map", {
-        zoomControl: false,
-        attributionControl: false,
-        preferCanvas: true
-      }).setView([51.16, 10.45], 6);
-
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-        maxZoom: 19
-      }).addTo(map);
-
-      L.control.zoom({ position: "bottomright" }).addTo(map);
-    }
-
-    function clearMarkers() {
-      markers.forEach(m => map.removeLayer(m));
-      markers = [];
-    }
-
-    function addMarker(s, active = false) {
-      const icon = L.divIcon({
-        className: "",
-        html: `<div class="station-dot ${active ? "active" : ""}"></div>`,
-        iconSize: active ? [16,16] : [12,12],
-        iconAnchor: active ? [8,8] : [6,6]
-      });
-
-      const m = L.marker([s.lat, s.lon], {
-        icon,
-        zIndexOffset: active ? 900 : 500
-      }).addTo(map);
-
-      const dist = s.dist != null
-        ? (s.dist < 1000 ? Math.round(s.dist) + " m" : (s.dist/1000).toFixed(1) + " km")
-        : "";
-
-      m.bindPopup(`<b>${s.name}</b>${s.place ? "<br>"+s.place : ""}${dist ? "<br>"+dist : ""}`);
-      m.on("click", () => select(s));
-      markers.push(m);
-    }
-
-    function setUser(lat, lon) {
-      if (userMarker) map.removeLayer(userMarker);
-      userMarker = L.marker([lat, lon], {
-        icon: L.divIcon({
-          className: "",
-          html: '<div class="user-dot"></div>',
-          iconSize: [16,16],
-          iconAnchor: [8,8]
-        }),
-        zIndexOffset: 1000
-      }).addTo(map);
-    }
-
-    function typeOf(t, label) {
-      const a = (t||"").toUpperCase();
-      const b = (label||"").toUpperCase();
+    function type(t, label) {
+      const a = (t || "").toUpperCase();
+      const b = (label || "").toUpperCase();
       if (a.includes("UBAHN") || b.startsWith("U")) return "u";
       if (a.includes("SBAHN") || b.startsWith("S")) return "s";
       if (a.includes("TRAM")) return "tram";
       if (a.includes("BUS")) return "bus";
-      return "other";
+      return "x";
     }
 
-    function mins(ms) {
+    function minutes(ms) {
       const m = Math.round((ms - Date.now()) / 60000);
       return m <= 0 ? "jetzt" : m + " min";
-    }
-
-    function dist(a,b,c,d) {
-      const R = 6371e3;
-      const p1 = a * Math.PI/180, p2 = c * Math.PI/180;
-      const dp = (c-a)*Math.PI/180, dl = (d-b)*Math.PI/180;
-      const x = Math.sin(dp/2)**2 + Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2;
-      return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1-x));
     }
 
     async function search(q) {
       const box = document.getElementById("results");
       if (!q || q.length < 2) {
-        box.classList.remove("open");
+        box.classList.remove("show");
         return;
       }
 
       try {
-        const res = await fetch(`https://www.mvg.de/api/bgw-pt/v3/locations?query=${encodeURIComponent(q)}`);
+        const res = await fetch("https://www.mvg.de/api/bgw-pt/v3/locations?query=" + encodeURIComponent(q));
         const data = await res.json();
-        const list = (Array.isArray(data) ? data : []).filter(x => x.globalId || x.id).slice(0, 10);
+        const list = (Array.isArray(data) ? data : []).filter(x => x.globalId || x.id).slice(0, 8);
 
         if (!list.length) {
           box.innerHTML = `<div class="result"><div class="name">Keine Treffer</div></div>`;
-          box.classList.add("open");
+          box.classList.add("show");
           return;
         }
 
         box.innerHTML = list.map(s => `
-          <div class="result"
-               data-id="${s.globalId||s.id}"
-               data-name="${s.name}"
-               data-lat="${s.latitude}"
-               data-lon="${s.longitude}"
-               data-place="${s.place||""}">
+          <div class="result" data-id="${s.globalId || s.id}" data-name="${s.name}" data-lat="${s.latitude}" data-lon="${s.longitude}" data-place="${s.place || ""}">
             <div class="name">${s.name}</div>
-            <div class="meta">${s.place||""}</div>
+            <div class="place">${s.place || ""}</div>
           </div>
         `).join("");
 
-        box.classList.add("open");
+        box.classList.add("show");
 
         box.querySelectorAll(".result").forEach(el => {
           el.onclick = () => {
@@ -544,206 +412,149 @@
               lon: +el.dataset.lon,
               place: el.dataset.place
             });
-            box.classList.remove("open");
-            document.getElementById("search").value = el.dataset.name;
+            box.classList.remove("show");
+            document.getElementById("q").value = el.dataset.name;
           };
         });
       } catch {
-        box.innerHTML = `<div class="result"><div class="name">Suchfehler</div><div class="meta">Netzwerk / CORS</div></div>`;
-        box.classList.add("open");
+        box.innerHTML = `<div class="result"><div class="name">Fehler</div><div class="place">Netzwerk / CORS</div></div>`;
+        box.classList.add("show");
       }
     }
 
-    async function nearby(lat, lon) {
-      const queries = ["Bahnhof","Hauptbahnhof","Zentrum","Platz","Straße","Markt","U-Bahn","S-Bahn","Haltestelle","Marienplatz"];
-      let all = [];
+    async function load(station) {
+      document.getElementById("title").textContent = station.name;
+      document.getElementById("sub").textContent = station.place ? station.place + " · Live" : "Live-Abfahrten";
+      document.getElementById("deps").innerHTML = `<div class="empty">Lade Abfahrten…</div>`;
 
       try {
-        const reqs = queries.map(q =>
-          fetch(`https://www.mvg.de/api/bgw-pt/v3/locations?query=${encodeURIComponent(q)}`)
-            .then(r => r.json())
-            .then(d => Array.isArray(d) ? d : [])
-            .catch(() => [])
-        );
-
-        const results = await Promise.all(reqs);
-        results.forEach(list => all.push(...list));
-
-        const seen = new Set();
-        all = all.filter(s => {
-          const id = s.globalId || s.id;
-          if (!id || !s.latitude || !s.longitude || seen.has(id)) return false;
-          seen.add(id);
-          return true;
-        });
-
-        return all
-          .map(s => ({
-            id: s.globalId || s.id,
-            name: s.name,
-            lat: s.latitude,
-            lon: s.longitude,
-            place: s.place || "",
-            dist: dist(lat, lon, s.latitude, s.longitude)
-          }))
-          .filter(s => s.dist < 15000)
-          .sort((a,b) => a.dist - b.dist)
-          .slice(0, 30);
-      } catch {
-        return [];
-      }
-    }
-
-    async function loadDeps(s) {
-      const list = document.getElementById("list");
-      document.getElementById("title").textContent = s.name;
-
-      let sub = "Live-Abfahrten";
-      if (s.place) sub = s.place + " · Live";
-      if (s.dist != null) {
-        const d = s.dist < 1000 ? Math.round(s.dist) + " m" : (s.dist/1000).toFixed(1) + " km";
-        sub = d + " · " + sub;
-      }
-      document.getElementById("subtitle").textContent = sub;
-
-      list.innerHTML = `<div class="loading"><div class="spinner"></div>Lade Abfahrten…</div>`;
-
-      try {
-        let res = await fetch(`https://www.mvg.de/api/bgw-pt/v3/departures?globalId=${encodeURIComponent(s.id)}`);
-        if (!res.ok) res = await fetch(`https://www.mvg.de/api/fib/v2/departure?globalId=${encodeURIComponent(s.id)}`);
-
+        let res = await fetch("https://www.mvg.de/api/bgw-pt/v3/departures?globalId=" + encodeURIComponent(station.id));
+        if (!res.ok) {
+          res = await fetch("https://www.mvg.de/api/fib/v2/departure?globalId=" + encodeURIComponent(station.id));
+        }
         const data = await res.json();
-        deps = Array.isArray(data) ? data : (data.departures || []);
+        allDeps = Array.isArray(data) ? data : (data.departures || []);
         render();
       } catch {
-        list.innerHTML = `<div class="empty">Abfahrten nicht ladbar<br><small style="opacity:.7">CORS / API</small></div>`;
+        document.getElementById("deps").innerHTML = `<div class="empty">Abfahrten nicht ladbar<br><small>CORS oder API</small></div>`;
       }
     }
 
     function render() {
-      const list = document.getElementById("list");
-      let items = deps;
-
+      let list = allDeps;
       if (filter !== "all") {
-        items = items.filter(d => typeOf(d.transportType || d.product, d.label || d.line) === filter);
+        list = list.filter(d => type(d.transportType || d.product, d.label || d.line) === filter);
       }
 
-      if (!items.length) {
-        list.innerHTML = `<div class="empty">Keine Abfahrten für diesen Filter</div>`;
+      if (!list.length) {
+        document.getElementById("deps").innerHTML = `<div class="empty">Keine Abfahrten</div>`;
         return;
       }
 
       const now = Date.now();
       let html = "";
 
-      items.slice(0, 40).forEach(d => {
+      list.slice(0, 30).forEach(d => {
         const label = d.label || d.line || "?";
         const dest = d.destination || d.direction || "–";
-        const t = typeOf(d.transportType || d.product, label);
+        const t = type(d.transportType || d.product, label);
         const rt = d.realtimeDepartureTime || d.departureTime || now;
         const delay = d.delayInMinutes || 0;
         const platform = d.platform || "";
-        const live = !!d.realtime;
 
-        let status = "";
-        if (delay > 0) status = `<div class="status delay">+${delay} min</div>`;
-        else if (live) status = `<div class="status live">LIVE</div>`;
+        let extra = "";
+        if (delay > 0) extra = `<small class="delay">+${delay} min</small>`;
+        else if (d.realtime) extra = `<small class="live">LIVE</small>`;
 
         html += `
           <div class="dep">
             <div class="badge ${t}">${label}</div>
-            <div class="info">
+            <div>
               <div class="dest">${dest}</div>
-              <div class="meta">
-                ${platform ? `<span>Gl. ${platform}</span>` : ""}
-                ${d.cancelled ? `<span style="color:var(--red)">entfällt</span>` : ""}
-              </div>
+              <div class="meta">${platform ? "Gl. " + platform : ""}${d.cancelled ? " · entfällt" : ""}</div>
             </div>
             <div class="time">
-              <div class="min">${mins(rt)}</div>
-              ${status}
+              ${minutes(rt)}
+              ${extra}
             </div>
           </div>
         `;
       });
 
-      list.innerHTML = html;
+      document.getElementById("deps").innerHTML = html;
     }
 
-    function select(s) {
-      current = s;
-      clearMarkers();
-      addMarker(s, true);
-      map.flyTo([s.lat, s.lon], 15.5, { duration: .8 });
-      loadDeps(s);
+    function select(station) {
+      current = station;
 
-      if (timer) clearInterval(timer);
-      timer = setInterval(() => loadDeps(s), 30000);
+      if (stopMarker) map.removeLayer(stopMarker);
+      stopMarker = L.marker([station.lat, station.lon], {
+        icon: L.divIcon({
+          className: "",
+          html: '<div class="stop"></div>',
+          iconSize: [14, 14],
+          iconAnchor: [7, 7]
+        })
+      }).addTo(map);
+
+      map.flyTo([station.lat, station.lon], 15.5, { duration: 0.7 });
+      load(station);
+
+      if (refresh) clearInterval(refresh);
+      refresh = setInterval(() => load(station), 30000);
     }
 
     function locate() {
       if (!navigator.geolocation) {
-        document.getElementById("title").textContent = "Standort nicht verfügbar";
-        document.getElementById("subtitle").textContent = "Bitte suchen";
-        document.getElementById("list").innerHTML = `<div class="empty">Standortzugriff wird nicht unterstützt</div>`;
+        alert("Standort nicht verfügbar");
         return;
       }
 
-      document.getElementById("title").textContent = "Standort wird ermittelt…";
-      document.getElementById("subtitle").textContent = "Bitte warten";
-      document.getElementById("list").innerHTML = `<div class="loading"><div class="spinner"></div>Standort wird geladen…</div>`;
+      navigator.geolocation.getCurrentPosition(pos => {
+        const { latitude, longitude } = pos.coords;
 
-      navigator.geolocation.getCurrentPosition(
-        async pos => {
-          lat = pos.coords.latitude;
-          lon = pos.coords.longitude;
-          setUser(lat, lon);
-          map.setView([lat, lon], 14);
+        if (userMarker) map.removeLayer(userMarker);
+        userMarker = L.marker([latitude, longitude], {
+          icon: L.divIcon({
+            className: "",
+            html: '<div class="user"></div>',
+            iconSize: [16, 16],
+            iconAnchor: [8, 8]
+          })
+        }).addTo(map);
 
-          const near = await nearby(lat, lon);
-          clearMarkers();
-          near.forEach((s, i) => addMarker(s, i === 0));
-
-          if (near.length) select(near[0]);
-          else {
-            document.getElementById("title").textContent = "Dein Standort";
-            document.getElementById("subtitle").textContent = "Keine Haltestellen gefunden";
-            document.getElementById("list").innerHTML = `<div class="empty">Standort gefunden.<br>Suche manuell eine Haltestelle.</div>`;
-          }
-        },
-        () => {
-          document.getElementById("title").textContent = "Standort blockiert";
-          document.getElementById("subtitle").textContent = "Zugriff erlauben oder suchen";
-          document.getElementById("list").innerHTML = `<div class="empty">Standort konnte nicht ermittelt werden</div>`;
-        },
-        { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 }
-      );
+        map.setView([latitude, longitude], 14);
+        document.getElementById("title").textContent = "Dein Standort";
+        document.getElementById("sub").textContent = "Jetzt Haltestelle suchen";
+        document.getElementById("deps").innerHTML = `<div class="empty">Standort gefunden.<br>Suche jetzt eine Haltestelle.</div>`;
+      }, () => {
+        alert("Standort konnte nicht ermittelt werden");
+      }, { enableHighAccuracy: true, timeout: 10000 });
     }
 
-    // events
-    let t;
-    document.getElementById("search").addEventListener("input", e => {
-      clearTimeout(t);
-      t = setTimeout(() => search(e.target.value.trim()), 220);
+    // Events
+    let timer;
+    document.getElementById("q").addEventListener("input", e => {
+      clearTimeout(timer);
+      timer = setTimeout(() => search(e.target.value.trim()), 200);
     });
 
-    document.getElementById("locate").onclick = locate;
+    document.getElementById("loc").onclick = locate;
 
     document.getElementById("filters").onclick = e => {
-      const c = e.target.closest(".chip");
-      if (!c) return;
-      document.querySelectorAll(".chip").forEach(x => x.classList.remove("active"));
-      c.classList.add("active");
-      filter = c.dataset.f;
+      const chip = e.target.closest(".chip");
+      if (!chip) return;
+      document.querySelectorAll(".chip").forEach(c => c.classList.remove("on"));
+      chip.classList.add("on");
+      filter = chip.dataset.f;
       render();
     };
 
     document.addEventListener("click", e => {
-      if (!e.target.closest(".search")) document.getElementById("results").classList.remove("open");
+      if (!e.target.closest(".search-box")) {
+        document.getElementById("results").classList.remove("show");
+      }
     });
-
-    init();
-    locate();
   </script>
 </body>
 </html>
