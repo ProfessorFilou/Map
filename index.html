@@ -2,744 +2,531 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>ÖPNV Live</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Navi · München</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     :root {
-      --bg: #0b0d12;
-      --panel: #14171f;
-      --card: #1c202b;
-      --border: #2d3444;
-      --text: #f1f3f8;
-      --muted: #8b93a7;
-      --accent: #8ab4f8;
-      --u: #0065b0;
-      --s: #008c4f;
-      --tram: #e30613;
-      --bus: #f5a623;
-      --green: #34d399;
-      --red: #f87171;
-      --orange: #f5a623;
+      --bg: #0c0e14;
+      --panel: #151922;
+      --border: #2a3142;
+      --text: #f1f3f7;
+      --muted: #8b93a8;
+      --accent: #4f8cff;
+      --green: #22c55e;
+      --orange: #f59e0b;
     }
-
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
     body {
-      font-family: "Google Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       background: var(--bg);
       color: var(--text);
       height: 100dvh;
       overflow: hidden;
     }
+    #map { position: absolute; inset: 0; z-index: 1; }
 
-    #app {
-      display: grid;
-      grid-template-columns: 400px 1fr;
-      height: 100dvh;
+    /* ===== TOP PANEL ===== */
+    .top {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      z-index: 1000;
+      padding: 12px 14px 0;
+      background: linear-gradient(to bottom, rgba(12,14,20,0.97) 70%, transparent);
     }
-
-    @media (max-width: 900px) {
-      #app {
-        grid-template-columns: 1fr;
-        grid-template-rows: 1fr auto;
-      }
-    }
-
-    /* ========== PANEL ========== */
-    .panel {
+    .card {
       background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+    }
+    .row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .row:last-child { margin-bottom: 0; }
+    .dots {
       display: flex;
       flex-direction: column;
-      border-right: 1px solid var(--border);
-      z-index: 40;
-      max-height: 100dvh;
-      overflow: hidden;
+      align-items: center;
+      gap: 4px;
+      width: 18px;
     }
+    .dot-from { width: 10px; height: 10px; border-radius: 50%; background: var(--green); }
+    .dot-line { width: 2px; height: 18px; background: var(--border); }
+    .dot-to { width: 10px; height: 10px; border-radius: 50%; background: #ef4444; }
 
-    @media (max-width: 900px) {
-      .panel {
-        border-right: none;
-        border-radius: 24px 24px 0 0;
-        max-height: 48dvh;
-        box-shadow: 0 -10px 40px rgba(0,0,0,.55);
-        order: 2;
-      }
-    }
-
-    .top {
-      padding: 14px 16px 12px;
-      flex-shrink: 0;
-      border-bottom: 1px solid var(--border);
-    }
-
-    @media (max-width: 900px) {
-      .handle {
-        width: 40px;
-        height: 4px;
-        background: #3c4558;
-        border-radius: 2px;
-        margin: 0 auto 12px;
-      }
-    }
-
-    .search {
-      position: relative;
-    }
-
-    .search input {
+    .inputs { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+    .input-wrap { position: relative; }
+    input {
       width: 100%;
-      height: 48px;
-      padding: 0 48px 0 44px;
-      background: var(--card);
+      padding: 12px 40px 12px 14px;
+      background: #0f1219;
       border: 1px solid var(--border);
-      border-radius: 28px;
+      border-radius: 12px;
       color: var(--text);
       font-size: 15px;
       outline: none;
-      box-shadow: 0 2px 12px rgba(0,0,0,.3);
+    }
+    input:focus { border-color: var(--accent); }
+    .loc-btn {
+      position: absolute;
+      right: 8px; top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px;
     }
 
-    .search input:focus {
+    .modes {
+      display: flex;
+      gap: 6px;
+      margin-top: 12px;
+    }
+    .mode {
+      flex: 1;
+      padding: 9px 0;
+      border-radius: 11px;
+      border: 1px solid var(--border);
+      background: #0f1219;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .mode.active {
+      background: var(--accent);
+      color: white;
       border-color: var(--accent);
     }
 
-    .search .s-icon {
-      position: absolute;
-      left: 16px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 18px;
-      height: 18px;
-      opacity: .55;
-      pointer-events: none;
-    }
-
-    .search .loc-btn {
-      position: absolute;
-      right: 6px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 38px;
-      height: 38px;
+    .go-btn {
+      margin-top: 12px;
+      width: 100%;
+      padding: 13px;
       border: none;
-      background: transparent;
-      border-radius: 50%;
-      color: var(--accent);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      border-radius: 13px;
+      background: linear-gradient(135deg, #4f8cff, #6366f1);
+      color: white;
+      font-size: 15px;
+      font-weight: 700;
       cursor: pointer;
     }
+    .go-btn:active { opacity: 0.9; }
 
-    .results {
+    /* Suggestions */
+    .suggest {
       position: absolute;
-      top: calc(100% + 8px);
-      left: 0;
-      right: 0;
-      background: var(--card);
+      left: 14px; right: 14px;
+      top: 100%;
+      margin-top: 4px;
+      background: var(--panel);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      max-height: 280px;
+      border-radius: 12px;
+      max-height: 220px;
       overflow-y: auto;
+      z-index: 20;
       display: none;
-      z-index: 60;
-      box-shadow: 0 12px 36px rgba(0,0,0,.45);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
-
-    .results.open { display: block; }
-
-    .result {
+    .suggest.show { display: block; }
+    .sug-item {
       padding: 12px 14px;
       border-bottom: 1px solid var(--border);
       cursor: pointer;
+      font-size: 14px;
+    }
+    .sug-item:last-child { border-bottom: none; }
+    .sug-item:active { background: #1c2230; }
+    .sug-item small { color: var(--muted); display: block; margin-top: 2px; }
+
+    /* ===== BOTTOM SHEET ===== */
+    .sheet {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      z-index: 1000;
+      background: var(--panel);
+      border-radius: 22px 22px 0 0;
+      max-height: 42%;
       display: flex;
-      gap: 12px;
-      align-items: center;
+      flex-direction: column;
+      box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+      transform: translateY(100%);
+      transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
     }
-
-    .result:last-child { border-bottom: none; }
-    .result:hover, .result:active { background: #252a38; }
-
-    .result-ico {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: #2a3142;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
+    .sheet.open { transform: translateY(0); }
+    .handle {
+      width: 40px; height: 5px;
+      background: #3a4258;
+      border-radius: 3px;
+      margin: 10px auto 4px;
     }
-
-    .result .name { font-weight: 600; font-size: 14px; }
-    .result .place { font-size: 12px; color: var(--muted); margin-top: 2px; }
-
-    .head {
-      padding: 12px 16px 8px;
-      border-bottom: 1px solid var(--border);
-      display: none;
+    .sheet-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 16px 28px;
+      -webkit-overflow-scrolling: touch;
     }
-
-    .head.show { display: block; }
-
-    .head h1 {
-      font-size: 18px;
-      font-weight: 700;
-      letter-spacing: -0.3px;
+    .route-card {
+      background: #0f1219;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 10px;
+      cursor: pointer;
     }
-
-    .head .meta {
+    .route-card:active { border-color: var(--accent); }
+    .route-card .time {
+      font-size: 20px;
+      font-weight: 800;
+    }
+    .route-card .meta {
       font-size: 13px;
       color: var(--muted);
       margin-top: 4px;
+    }
+    .route-card .legs {
+      margin-top: 10px;
       display: flex;
-      align-items: center;
-      gap: 8px;
+      flex-wrap: wrap;
+      gap: 6px;
     }
-
-    .dot {
-      width: 7px;
-      height: 7px;
-      background: var(--green);
-      border-radius: 50%;
-      animation: pulse 1.6s infinite;
-    }
-
-    @keyframes pulse {
-      0%,100% { opacity: 1; }
-      50% { opacity: .35; }
-    }
-
-    .filters {
-      display: flex;
-      gap: 8px;
-      padding: 10px 16px;
-      overflow-x: auto;
-      flex-shrink: 0;
-      scrollbar-width: none;
-    }
-
-    .filters::-webkit-scrollbar { display: none; }
-
-    .chip {
-      flex-shrink: 0;
-      padding: 7px 14px;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: 600;
-      background: var(--card);
-      border: 1px solid var(--border);
-      color: var(--muted);
-      cursor: pointer;
-    }
-
-    .chip.on {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #0b0d12;
-    }
-
-    .list {
-      flex: 1;
-      overflow-y: auto;
-      padding-bottom: max(16px, env(safe-area-inset-bottom));
-    }
-
-    .dep {
-      display: grid;
-      grid-template-columns: 52px 1fr auto;
-      gap: 12px;
-      align-items: center;
-      padding: 12px 16px;
-      border-bottom: 1px solid rgba(45,52,68,.55);
-    }
-
-    .badge {
-      height: 28px;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 800;
+    .leg {
+      padding: 4px 9px;
+      border-radius: 8px;
       font-size: 12px;
-      color: #fff;
-    }
-
-    .badge.u { background: var(--u); }
-    .badge.s { background: var(--s); }
-    .badge.tram { background: var(--tram); }
-    .badge.bus { background: var(--bus); color: #111; }
-    .badge.x { background: #4a5368; }
-
-    .dest {
-      font-size: 14px;
-      font-weight: 550;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .dep-meta {
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 2px;
-    }
-
-    .time {
-      text-align: right;
-      min-width: 52px;
-    }
-
-    .time .min {
-      font-size: 15px;
       font-weight: 700;
-      font-variant-numeric: tabular-nums;
+      color: white;
     }
+    .leg.u { background: #0065b0; }
+    .leg.s { background: #008c4f; }
+    .leg.tram { background: #e30613; }
+    .leg.bus { background: #f5a623; color: #111; }
+    .leg.walk { background: #64748b; }
+    .leg.car { background: #3b82f6; }
+    .leg.bike { background: #10b981; }
 
-    .time .st {
-      font-size: 11px;
-      font-weight: 600;
-      margin-top: 1px;
-    }
-
-    .st.live { color: var(--green); }
-    .st.delay { color: var(--red); }
-
-    .empty {
-      padding: 40px 20px;
+    .empty-msg {
       text-align: center;
       color: var(--muted);
-      font-size: 14px;
-      line-height: 1.5;
-    }
-
-    .note {
-      padding: 8px 14px;
-      font-size: 11px;
-      color: var(--orange);
-      background: rgba(245,166,35,.08);
-      border-top: 1px solid rgba(245,166,35,.2);
-      text-align: center;
-      flex-shrink: 0;
-    }
-
-    /* ========== MAP ========== */
-    #map {
-      width: 100%;
-      height: 100%;
-      order: 1;
-      background: #0d1118;
-    }
-
-    .fab {
-      position: absolute;
-      right: 14px;
-      bottom: max(20px, env(safe-area-inset-bottom));
-      z-index: 25;
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      color: var(--text);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 4px 18px rgba(0,0,0,.45);
-      cursor: pointer;
-    }
-
-    @media (max-width: 900px) {
-      .fab { bottom: calc(48dvh + 14px); }
-    }
-
-    .fab:active { background: var(--card); }
-    .fab svg { width: 22px; height: 22px; }
-
-    .user {
-      width: 16px;
-      height: 16px;
-      background: #8ab4f8;
-      border: 3px solid #fff;
-      border-radius: 50%;
-      box-shadow: 0 0 0 6px rgba(138,180,248,.28);
-    }
-
-    .stop {
-      width: 14px;
-      height: 14px;
-      background: var(--accent);
-      border: 2.5px solid #fff;
-      border-radius: 50%;
-      box-shadow: 0 0 0 4px rgba(138,180,248,.22);
-    }
-
-    .veh {
-      width: 26px;
-      height: 26px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 10px;
-      font-weight: 800;
-      color: #fff;
-      border: 2px solid rgba(255,255,255,.3);
-      box-shadow: 0 2px 8px rgba(0,0,0,.4);
-    }
-
-    .veh.u { background: var(--u); }
-    .veh.s { background: var(--s); }
-    .veh.tram { background: var(--tram); }
-    .veh.bus { background: var(--bus); color: #111; }
-
-    .leaflet-popup-content-wrapper {
-      background: var(--card);
-      color: var(--text);
-      border-radius: 12px;
-      box-shadow: 0 8px 24px rgba(0,0,0,.4);
-    }
-
-    .leaflet-popup-tip { background: var(--card); }
-    .leaflet-popup-content {
-      margin: 10px 12px;
-      font-size: 13px;
-      font-weight: 600;
+      padding: 30px 10px;
+      font-size: 15px;
     }
   </style>
 </head>
 <body>
-  <div id="app">
-    <aside class="panel">
-      <div class="top">
-        <div class="handle"></div>
-        <div class="search">
-          <svg class="s-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-          </svg>
-          <input id="q" type="text" placeholder="Haltestelle suchen…" autocomplete="off" />
-          <button class="loc-btn" id="loc1" title="Standort">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
-            </svg>
-          </button>
-          <div id="results" class="results"></div>
+  <div id="map"></div>
+
+  <div class="top">
+    <div class="card">
+      <div class="row">
+        <div class="dots">
+          <div class="dot-from"></div>
+          <div class="dot-line"></div>
+          <div class="dot-to"></div>
+        </div>
+        <div class="inputs">
+          <div class="input-wrap">
+            <input id="from" placeholder="Von (Adresse oder Haltestelle)" autocomplete="off" />
+            <button class="loc-btn" id="myLoc" title="Mein Standort">📍</button>
+            <div class="suggest" id="fromSug"></div>
+          </div>
+          <div class="input-wrap">
+            <input id="to" placeholder="Nach (Adresse oder Haltestelle)" autocomplete="off" />
+            <div class="suggest" id="toSug"></div>
+          </div>
         </div>
       </div>
 
-      <div class="head" id="head">
-        <h1 id="title">–</h1>
-        <div class="meta">
-          <span class="dot"></span>
-          <span id="sub">Live-Abfahrten</span>
-        </div>
+      <div class="modes">
+        <div class="mode active" data-mode="transit">ÖPNV</div>
+        <div class="mode" data-mode="car">Auto</div>
+        <div class="mode" data-mode="bike">Fahrrad</div>
+        <div class="mode" data-mode="foot">Zu Fuß</div>
       </div>
 
-      <div class="filters" id="filters">
-        <button class="chip on" data-f="all">Alle</button>
-        <button class="chip" data-f="u">U-Bahn</button>
-        <button class="chip" data-f="s">S-Bahn</button>
-        <button class="chip" data-f="tram">Tram</button>
-        <button class="chip" data-f="bus">Bus</button>
-      </div>
+      <button class="go-btn" id="go">Route berechnen</button>
+    </div>
+  </div>
 
-      <div class="list" id="list">
-        <div class="empty">
-          Suche eine Haltestelle<br>
-          oder nutze den Standort-Button
-        </div>
-      </div>
-
-      <div class="note">
-        Fahrzeuge auf der Karte sind simuliert · keine echten MVG-GPS-Daten
-      </div>
-    </aside>
-
-    <div id="map"></div>
-    <button class="fab" id="loc2" title="Mein Standort">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
-      </svg>
-    </button>
+  <div class="sheet" id="sheet">
+    <div class="handle"></div>
+    <div class="sheet-body" id="sheetBody">
+      <div class="empty-msg">Route berechnen, um Vorschläge zu sehen</div>
+    </div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    const map = L.map("map", {
+    // ========== STATE ==========
+    let mode = 'transit';
+    let fromPlace = null;
+    let toPlace = null;
+    let routeLayer = null;
+    let markers = [];
+
+    // ========== MAP ==========
+    const map = L.map('map', {
       zoomControl: false,
-      attributionControl: false,
-      preferCanvas: true
+      attributionControl: false
     }).setView([48.137, 11.575], 13);
 
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       maxZoom: 19
     }).addTo(map);
 
-    L.control.zoom({ position: "bottomright" }).addTo(map);
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    let userM = null, stopM = null;
-    let vehicles = [];
-    let vTimers = [];
-    let current = null;
-    let deps = [];
-    let filter = "all";
-    let refresh = null;
-
-    function typeOf(t, label) {
-      const a = (t || "").toUpperCase();
-      const b = (label || "").toUpperCase();
-      if (a.includes("UBAHN") || b.startsWith("U")) return "u";
-      if (a.includes("SBAHN") || b.startsWith("S")) return "s";
-      if (a.includes("TRAM")) return "tram";
-      if (a.includes("BUS")) return "bus";
-      return "x";
+    // ========== HELPERS ==========
+    function clearRoute() {
+      if (routeLayer) map.removeLayer(routeLayer);
+      markers.forEach(m => map.removeLayer(m));
+      markers = [];
+      routeLayer = null;
     }
 
-    function mins(ms) {
-      const m = Math.round((ms - Date.now()) / 60000);
-      return m <= 0 ? "jetzt" : m + " min";
+    function addMarker(lat, lon, color) {
+      const m = L.circleMarker([lat, lon], {
+        radius: 8,
+        color: '#fff',
+        weight: 2,
+        fillColor: color,
+        fillOpacity: 1
+      }).addTo(map);
+      markers.push(m);
+      return m;
     }
 
-    function clearVehicles() {
-      vTimers.forEach(t => clearInterval(t));
-      vTimers = [];
-      vehicles.forEach(m => map.removeLayer(m));
-      vehicles = [];
-    }
-
-    // Simulierte Fahrzeuge – bewegen sich kontrolliert in der Nähe der Station
-    function spawnVehicles(list, lat, lon) {
-      clearVehicles();
-      const items = list.slice(0, 7);
-
-      items.forEach((d, i) => {
-        const label = d.label || d.line || "?";
-        const t = typeOf(d.transportType || d.product, label);
-        const dest = d.destination || d.direction || "";
-
-        const angle = (i / Math.max(items.length, 1)) * Math.PI * 2;
-        const dist = 0.0016 + (i % 3) * 0.0007;
-        let vLat = lat + Math.cos(angle) * dist;
-        let vLon = lon + Math.sin(angle) * dist * 1.3;
-
-        const icon = L.divIcon({
-          className: "",
-          html: `<div class="veh ${t}">${label.slice(0, 3)}</div>`,
-          iconSize: [26, 26],
-          iconAnchor: [13, 13]
-        });
-
-        const m = L.marker([vLat, vLon], { icon, zIndexOffset: 700 }).addTo(map);
-        m.bindPopup(`<b>${label}</b><br>${dest}<br><small>simuliert</small>`);
-        vehicles.push(m);
-
-        // Ruhige, kleine Bewegung (nicht chaotisch durch Häuser)
-        const timer = setInterval(() => {
-          if (!map.hasLayer(m)) return;
-          const p = m.getLatLng();
-          m.setLatLng([
-            p.lat + (Math.random() - 0.5) * 0.00015,
-            p.lng + (Math.random() - 0.5) * 0.00015
-          ]);
-        }, 4000 + i * 400);
-
-        vTimers.push(timer);
-      });
-    }
-
-    async function search(q) {
-      const box = document.getElementById("results");
-      if (!q || q.length < 2) {
-        box.classList.remove("open");
+    // ========== SEARCH (Nominatim + MVG) ==========
+    async function searchPlaces(query, target) {
+      if (!query || query.length < 2) {
+        target.classList.remove('show');
         return;
       }
-
       try {
-        const res = await fetch("https://www.mvg.de/api/bgw-pt/v3/locations?query=" + encodeURIComponent(q));
-        const data = await res.json();
-        const list = (Array.isArray(data) ? data : []).filter(x => x.globalId || x.id).slice(0, 8);
+        // Erst MVG-Stationen versuchen
+        const mvgRes = await fetch(`https://www.mvg.de/api/bgw-pt/v3/locations?query=${encodeURIComponent(query)}`);
+        const mvgData = await mvgRes.json();
+        let items = (Array.isArray(mvgData) ? mvgData : []).slice(0, 5).map(s => ({
+          name: s.name,
+          place: s.place || 'München',
+          lat: s.latitude,
+          lon: s.longitude,
+          id: s.globalId || s.id,
+          type: 'station'
+        }));
 
-        if (!list.length) {
-          box.innerHTML = `<div class="result"><div class="name">Keine Treffer</div></div>`;
-          box.classList.add("open");
-          return;
+        // Falls wenig Treffer → Nominatim ergänzen
+        if (items.length < 3) {
+          const nom = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ' München')}&limit=4`);
+          const nomData = await nom.json();
+          items = items.concat(nomData.map(n => ({
+            name: n.display_name.split(',')[0],
+            place: n.display_name,
+            lat: parseFloat(n.lat),
+            lon: parseFloat(n.lon),
+            type: 'place'
+          })));
         }
 
-        box.innerHTML = list.map(s => `
-          <div class="result" data-id="${s.globalId||s.id}" data-name="${s.name}" data-lat="${s.latitude}" data-lon="${s.longitude}" data-place="${s.place||""}">
-            <div class="result-ico">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 2a7 7 0 0 1 7 7c0 5-7 13-7 13S5 14 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.2"/>
-              </svg>
-            </div>
-            <div>
-              <div class="name">${s.name}</div>
-              <div class="place">${s.place||""}</div>
-            </div>
+        target.innerHTML = items.map((it, i) => `
+          <div class="sug-item" data-i="${i}">
+            ${it.name}
+            <small>${it.place}</small>
           </div>
-        `).join("");
+        `).join('');
+        target.classList.add('show');
+        target._items = items;
 
-        box.classList.add("open");
-
-        box.querySelectorAll(".result").forEach(el => {
+        target.querySelectorAll('.sug-item').forEach(el => {
           el.onclick = () => {
-            select({
-              id: el.dataset.id,
-              name: el.dataset.name,
-              lat: +el.dataset.lat,
-              lon: +el.dataset.lon,
-              place: el.dataset.place
-            });
-            box.classList.remove("open");
-            document.getElementById("q").value = el.dataset.name;
+            const item = items[el.dataset.i];
+            if (target.id === 'fromSug') {
+              fromPlace = item;
+              document.getElementById('from').value = item.name;
+            } else {
+              toPlace = item;
+              document.getElementById('to').value = item.name;
+            }
+            target.classList.remove('show');
           };
         });
-      } catch {
-        box.innerHTML = `<div class="result"><div class="name">Fehler</div><div class="place">Netzwerk / CORS</div></div>`;
-        box.classList.add("open");
+      } catch (e) {
+        target.innerHTML = `<div class="sug-item">Suche fehlgeschlagen</div>`;
+        target.classList.add('show');
       }
     }
 
-    async function load(station) {
-      document.getElementById("head").classList.add("show");
-      document.getElementById("title").textContent = station.name;
-      document.getElementById("sub").textContent = station.place ? station.place + " · Live" : "Live-Abfahrten";
-      document.getElementById("list").innerHTML = `<div class="empty">Lade Abfahrten…</div>`;
+    // Debounce
+    let t1, t2;
+    document.getElementById('from').addEventListener('input', e => {
+      clearTimeout(t1);
+      t1 = setTimeout(() => searchPlaces(e.target.value.trim(), document.getElementById('fromSug')), 280);
+    });
+    document.getElementById('to').addEventListener('input', e => {
+      clearTimeout(t2);
+      t2 = setTimeout(() => searchPlaces(e.target.value.trim(), document.getElementById('toSug')), 280);
+    });
 
-      try {
-        let res = await fetch("https://www.mvg.de/api/bgw-pt/v3/departures?globalId=" + encodeURIComponent(station.id));
-        if (!res.ok) {
-          res = await fetch("https://www.mvg.de/api/fib/v2/departure?globalId=" + encodeURIComponent(station.id));
-        }
-        const data = await res.json();
-        deps = Array.isArray(data) ? data : (data.departures || []);
-        render();
-        spawnVehicles(deps, station.lat, station.lon);
-      } catch {
-        document.getElementById("list").innerHTML = `<div class="empty">Abfahrten nicht ladbar<br><small>CORS / API</small></div>`;
-        clearVehicles();
-      }
-    }
+    // Mein Standort
+    document.getElementById('myLoc').onclick = () => {
+      if (!navigator.geolocation) return alert('Standort nicht verfügbar');
+      navigator.geolocation.getCurrentPosition(pos => {
+        fromPlace = {
+          name: 'Mein Standort',
+          lat: pos.coords.latitude,
+          lon: pos.coords.longitude,
+          type: 'geo'
+        };
+        document.getElementById('from').value = 'Mein Standort';
+        map.flyTo([fromPlace.lat, fromPlace.lon], 15);
+      }, () => alert('Standort konnte nicht ermittelt werden'));
+    };
 
-    function render() {
-      let list = deps;
-      if (filter !== "all") {
-        list = list.filter(d => typeOf(d.transportType || d.product, d.label || d.line) === filter);
-      }
+    // Mode Switch
+    document.querySelectorAll('.mode').forEach(el => {
+      el.onclick = () => {
+        document.querySelectorAll('.mode').forEach(m => m.classList.remove('active'));
+        el.classList.add('active');
+        mode = el.dataset.mode;
+      };
+    });
 
-      if (!list.length) {
-        document.getElementById("list").innerHTML = `<div class="empty">Keine Abfahrten</div>`;
+    // ========== ROUTING ==========
+    async function calcRoute() {
+      if (!fromPlace || !toPlace) {
+        alert('Bitte Start und Ziel wählen');
         return;
       }
 
-      const now = Date.now();
-      let html = "";
+      clearRoute();
+      const sheet = document.getElementById('sheet');
+      const body = document.getElementById('sheetBody');
+      body.innerHTML = `<div class="empty-msg">Berechne Route…</div>`;
+      sheet.classList.add('open');
 
-      list.slice(0, 30).forEach(d => {
-        const label = d.label || d.line || "?";
-        const dest = d.destination || d.direction || "–";
-        const t = typeOf(d.transportType || d.product, label);
-        const rt = d.realtimeDepartureTime || d.departureTime || now;
-        const delay = d.delayInMinutes || 0;
-        const platform = d.platform || "";
+      addMarker(fromPlace.lat, fromPlace.lon, '#22c55e');
+      addMarker(toPlace.lat, toPlace.lon, '#ef4444');
 
-        let st = "";
-        if (delay > 0) st = `<div class="st delay">+${delay} min</div>`;
-        else if (d.realtime) st = `<div class="st live">LIVE</div>`;
+      try {
+        if (mode === 'transit') {
+          await routeTransit();
+        } else {
+          await routeOSRM();
+        }
+      } catch (err) {
+        console.error(err);
+        body.innerHTML = `<div class="empty-msg">Route konnte nicht berechnet werden<br><small>${err.message || ''}</small></div>`;
+      }
+    }
+
+    // ÖPNV über MVG
+    async function routeTransit() {
+      const body = document.getElementById('sheetBody');
+
+      // Wenn keine Station-IDs, erst über Koordinaten/Name auflösen
+      let originId = fromPlace.id;
+      let destId = toPlace.id;
+
+      if (!originId || !destId) {
+        // Fallback: einfache Anzeige
+        body.innerHTML = `<div class="empty-msg">Für ÖPNV bitte Haltestellen auswählen (nicht nur Adressen)</div>`;
+        return;
+      }
+
+      const url = `https://www.mvg.de/api/bgw-pt/v3/routes?originStationGlobalId=${encodeURIComponent(originId)}&destinationStationGlobalId=${encodeURIComponent(destId)}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('MVG Routing fehlgeschlagen');
+      const data = await res.json();
+
+      const routes = Array.isArray(data) ? data : (data.routes || data.connections || []);
+      if (!routes.length) {
+        body.innerHTML = `<div class="empty-msg">Keine ÖPNV-Verbindung gefunden</div>`;
+        return;
+      }
+
+      let html = '';
+      routes.slice(0, 5).forEach((r, idx) => {
+        // Sehr unterschiedliche Response-Strukturen → robust parsen
+        const duration = r.duration || r.travelTime || Math.round((r.arrival || 0) - (r.departure || 0)) / 60000 || '–';
+        const legs = r.legs || r.parts || [];
+        let legHtml = '';
+        legs.forEach(l => {
+          const label = l.label || l.line || l.transportType || 'Walk';
+          const t = (l.transportType || l.product || label).toUpperCase();
+          let cls = 'walk';
+          if (t.includes('U')) cls = 'u';
+          else if (t.includes('S')) cls = 's';
+          else if (t.includes('TRAM')) cls = 'tram';
+          else if (t.includes('BUS')) cls = 'bus';
+          legHtml += `<span class="leg ${cls}">${label}</span>`;
+        });
+        if (!legHtml) legHtml = `<span class="leg walk">Verbindung</span>`;
 
         html += `
-          <div class="dep">
-            <div class="badge ${t}">${label}</div>
-            <div>
-              <div class="dest">${dest}</div>
-              <div class="dep-meta">${platform ? "Gl. " + platform : ""}${d.cancelled ? " · entfällt" : ""}</div>
-            </div>
-            <div class="time">
-              <div class="min">${mins(rt)}</div>
-              ${st}
-            </div>
+          <div class="route-card" data-idx="${idx}">
+            <div class="time">${typeof duration === 'number' ? duration + ' min' : duration}</div>
+            <div class="meta">ÖPNV · Verbindung ${idx + 1}</div>
+            <div class="legs">${legHtml}</div>
           </div>
         `;
       });
+      body.innerHTML = html;
 
-      document.getElementById("list").innerHTML = html;
+      // Erste Route grob auf Karte (nur Start–Ziel Linie, da Polylines oft fehlen)
+      const latlngs = [[fromPlace.lat, fromPlace.lon], [toPlace.lat, toPlace.lon]];
+      routeLayer = L.polyline(latlngs, { color: '#4f8cff', weight: 5, opacity: 0.85 }).addTo(map);
+      map.fitBounds(routeLayer.getBounds(), { padding: [80, 80] });
     }
 
-    function select(station) {
-      current = station;
+    // Auto / Bike / Foot über öffentlichen OSRM
+    async function routeOSRM() {
+      const body = document.getElementById('sheetBody');
+      const profile = mode === 'car' ? 'driving' : mode === 'bike' ? 'cycling' : 'foot';
 
-      if (stopM) map.removeLayer(stopM);
-      stopM = L.marker([station.lat, station.lon], {
-        icon: L.divIcon({
-          className: "",
-          html: '<div class="stop"></div>',
-          iconSize: [14, 14],
-          iconAnchor: [7, 7]
-        }),
-        zIndexOffset: 800
+      // Public OSRM Demo (kann rate-limited sein)
+      const url = `https://router.project-osrm.org/route/v1/${profile}/${fromPlace.lon},${fromPlace.lat};${toPlace.lon},${toPlace.lat}?overview=full&geometries=geojson`;
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (data.code !== 'Ok' || !data.routes?.length) {
+        throw new Error('Keine Route gefunden');
+      }
+
+      const r = data.routes[0];
+      const mins = Math.round(r.duration / 60);
+      const km = (r.distance / 1000).toFixed(1);
+
+      body.innerHTML = `
+        <div class="route-card">
+          <div class="time">${mins} min</div>
+          <div class="meta">${km} km · ${mode === 'car' ? 'Auto' : mode === 'bike' ? 'Fahrrad' : 'Zu Fuß'}</div>
+          <div class="legs">
+            <span class="leg ${mode === 'car' ? 'car' : mode === 'bike' ? 'bike' : 'walk'}">
+              ${mode === 'car' ? 'Auto' : mode === 'bike' ? 'Fahrrad' : 'Fußweg'}
+            </span>
+          </div>
+        </div>
+      `;
+
+      const coords = r.geometry.coordinates.map(c => [c[1], c[0]]);
+      routeLayer = L.polyline(coords, {
+        color: mode === 'car' ? '#3b82f6' : mode === 'bike' ? '#10b981' : '#94a3b8',
+        weight: 6,
+        opacity: 0.9
       }).addTo(map);
-
-      map.flyTo([station.lat, station.lon], 15.5, { duration: 0.7 });
-      load(station);
-
-      if (refresh) clearInterval(refresh);
-      refresh = setInterval(() => load(station), 30000);
+      map.fitBounds(routeLayer.getBounds(), { padding: [70, 70] });
     }
 
-    function locate() {
-      if (!navigator.geolocation) {
-        alert("Standort nicht verfügbar");
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(pos => {
-        const { latitude, longitude } = pos.coords;
-
-        if (userM) map.removeLayer(userM);
-        userM = L.marker([latitude, longitude], {
-          icon: L.divIcon({
-            className: "",
-            html: '<div class="user"></div>',
-            iconSize: [16, 16],
-            iconAnchor: [8, 8]
-          }),
-          zIndexOffset: 1000
-        }).addTo(map);
-
-        map.setView([latitude, longitude], 14);
-        document.getElementById("head").classList.remove("show");
-        document.getElementById("list").innerHTML = `<div class="empty">Standort gefunden.<br>Suche jetzt eine Haltestelle.</div>`;
-        clearVehicles();
-      }, () => {
-        alert("Standort konnte nicht ermittelt werden");
-      }, { enableHighAccuracy: true, timeout: 10000 });
-    }
-
-    // Events
-    let t;
-    document.getElementById("q").addEventListener("input", e => {
-      clearTimeout(t);
-      t = setTimeout(() => search(e.target.value.trim()), 200);
-    });
-
-    document.getElementById("loc1").onclick = locate;
-    document.getElementById("loc2").onclick = locate;
-
-    document.getElementById("filters").onclick = e => {
-      const c = e.target.closest(".chip");
-      if (!c) return;
-      document.querySelectorAll(".chip").forEach(x => x.classList.remove("on"));
-      c.classList.add("on");
-      filter = c.dataset.f;
-      render();
-    };
-
-    document.addEventListener("click", e => {
-      if (!e.target.closest(".search")) {
-        document.getElementById("results").classList.remove("open");
-      }
-    });
+    document.getElementById('go').onclick = calcRoute;
   </script>
 </body>
 </html>
